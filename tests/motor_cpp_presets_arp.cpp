@@ -1,4 +1,4 @@
-// Verifica, com o motor e o arpejador do plugin (os mesmos arquivos do VST3/AU), os 33 presets de fábrica:
+// Verifica, com o motor e o arpejador do plugin (os mesmos arquivos do VST3/AU), os 35 presets de fábrica:
 //  1) cada preset toca (não é mudo, não tem NaN, não passa de um nível absurdo);
 //  2) só Sub Arp e Sub Agro Arp trazem arpejo, com valores válidos, e o arpejador do plugin toca no andamento do preset.
 #include "AuraEngine.h"

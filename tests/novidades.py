@@ -17,10 +17,10 @@ with sync_playwright() as p:
         pg=nova(); pg.evaluate("document.getElementById('menuBtn').click()")
         with pg.expect_download(timeout=8000) as d: pg.evaluate(f"document.getElementById('{btn}').click()")
         z=zipfile.ZipFile(d.value.path()); nomes=[n for n in z.namelist() if n.endswith('.'+kind)]
-        conferir(len(nomes)==33 and z.testzip() is None, f'exportar .{kind}: zip com 33 arquivos ({len(nomes)})')
+        conferir(len(nomes)==35 and z.testzip() is None, f'exportar .{kind}: zip com 35 arquivos ({len(nomes)})')
         tmp=tempfile.mkdtemp(); z.extractall(tmp); n0=pg.evaluate("window.__live.presets().length")
         pg.set_input_files('#fileIn',[os.path.join(tmp,n) for n in nomes]); pg.wait_for_timeout(2200)
-        conferir(pg.evaluate("window.__live.presets().length")-n0==33 and not pg.errs, f'.{kind}: os 33 voltam para o AURA sem erro')
+        conferir(pg.evaluate("window.__live.presets().length")-n0==35 and not pg.errs, f'.{kind}: os 35 voltam para o AURA sem erro')
         pg.close()
     # 2) exportação bloqueada no teste e na demonstração
     pg=nova("window.AuraLic={status:()=>'trial'};")
@@ -51,7 +51,7 @@ with sync_playwright() as p:
     # 5) lista de presets por família e busca
     pg=nova(); pg.click('.brand'); pg.wait_for_timeout(300); pg.click('#oled'); pg.wait_for_timeout(400)
     grupos=pg.evaluate("[...document.querySelectorAll('#pList .pgrp')].map(e=>e.textContent)"); linhas=pg.evaluate("document.querySelectorAll('#pList .prow').length")
-    conferir(grupos==['SUB','DRIVE','OCTAVE','FUNK, POP E ROCK','LEAD','PLUCK','CHORUS E ESPECIAIS'] and linhas==33, f'lista com 7 famílias e 33 presets ({len(grupos)} grupos, {linhas} linhas)')
+    conferir(grupos==['SUB','DRIVE','OCTAVE','FUNK, POP E ROCK','LEAD','PLUCK','CHORUS E ESPECIAIS'] and linhas==35, f'lista com 7 famílias e 33 presets ({len(grupos)} grupos, {linhas} linhas)')
     pg.fill('#pSearch','drive'); pg.wait_for_timeout(200)
     conferir(pg.evaluate("document.querySelectorAll('#pList .pgrp').length")==0 and pg.evaluate("document.querySelectorAll('#pList .prow').length")==4, 'busca "drive" acha 4 presets e esconde os títulos')
     pg.fill('#pSearch',''); pg.click('#pCats button:text-is("PLUCK")'); pg.wait_for_timeout(200)
