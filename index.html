@@ -1180,7 +1180,9 @@
   function flushK(){ pendRaf=0; const a=[...pendK]; pendK.clear(); a.forEach(k=>knobChanged(k)); }
   const lastCC = {}, lastActT = {};
   const liteOn=()=>G.lite===1||(G.lite!==2&&liteAuto); let liteAuto=false;
-  function doAct(a){ if(a==='prev') stepPreset(-1); else if(a==='next') stepPreset(1); else if(a==='hold') setHold(!holdOn); else if(a==='arp') setArp(!arp.on); else if(a==='panic') panicAll(); else if(a==='safe') safePreset(); }
+  const actAt={};
+  function doAct(a){ const t=performance.now(); if(t-(actAt[a]||0)<200) return; actAt[a]=t;     // botão que "pula" (repique do pad) não dispara duas vezes
+    if(a==='prev') stepPreset(-1); else if(a==='next') stepPreset(1); else if(a==='hold') setHold(!holdOn); else if(a==='arp') setArp(!arp.on); else if(a==='panic') panicAll(); else if(a==='safe') safePreset(); }
   $('learnDone').addEventListener('click',()=>setLearn(false));
   drawMap();
 
@@ -2318,9 +2320,13 @@
   kb.addEventListener('pointerup',up); kb.addEventListener('pointercancel',up);
 
   // ====================== MIDI ======================
+  let dupKey='', dupT=0;
   function onMsg(ev){
+    const d=ev.data, now0=performance.now(), key=d[0]+','+d[1]+','+d[2];
+    if(key===dupKey && now0-dupT<15) return;       // o mesmo aperto chegando por duas portas (USB + Bluetooth, ou portas repetidas) conta uma vez só
+    dupKey=key; dupT=now0;
     midiUntil=performance.now()+120;
-    const d=ev.data, cmd=d[0]&0xF0; let d1=d[1]; const d2=d[2];
+    const cmd=d[0]&0xF0; let d1=d[1]; const d2=d[2];
     if(cmd>=0x80 && cmd<0xF0){ if(G.ch>0 && (d[0]&0x0F)+1!==G.ch) return; if(G.xp && cmd<=0xA0) d1=Math.max(0,Math.min(127,d1+G.xp)); }
     if(cmd===0x90 && d2>0){
       if(learnMode && learnTarget && learnTarget.startsWith('act:')){ learnMsgIn('n',d1); return; }
