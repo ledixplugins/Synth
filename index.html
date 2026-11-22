@@ -2509,9 +2509,9 @@
 (function(){
   const dbg=function(e){ try{ if(window.auraDbg) window.auraDbg(e); }catch(_){ /* só registro */ } };
   const D=window.auraDesktop; if(!D) return;           // app web: sem licenciamento
-  const CFG=Object.assign({ api:'https://api.lemonsqueezy.com/v1/licenses', trialDays:15, graceDays:30, buyUrl:'https://ledixplugins.com.br/aurasynthbass/' }, D.config||{});
+  const CFG=Object.assign({ api:'https://api.lemonsqueezy.com/v1/licenses', trialDays:15, graceDays:30, buyUrl:'https://ledixplugins.com.br/aurasynthbass/', trialApi:'' }, D.config||{});
   const DAY=86400000, $=id=>document.getElementById(id);
-  let st={ t0:0, seen:0, key:'', inst:'', val:0, name:'' }, status='trial', info='';
+  let st={ t0:0, seen:0, key:'', inst:'', val:0, name:'', email:'', reused:false }, status='trial', info='', keyMode=false;
   const css=document.createElement('style'); css.textContent=`
   #licOv{position:fixed;inset:0;z-index:100000;background:rgba(6,6,7,.92);display:none;align-items:center;justify-content:center;font-family:"Avenir Next",Futura,"Helvetica Neue",Arial,sans-serif;color:#e2e5ea}
   #licOv.on{display:flex}
@@ -2525,8 +2525,9 @@
   #licChip{position:fixed;right:12px;bottom:10px;z-index:9000;font:700 10px/1 "Avenir Next",Arial,sans-serif;letter-spacing:.18em;color:#ffcf8a;background:rgba(20,12,4,.85);border:1px solid #7a4c2a;border-radius:20px;padding:6px 12px;cursor:pointer}`;
   document.head.appendChild(css);
   const ov=document.createElement('div'); ov.id='licOv'; ov.innerHTML=`<div class="lb"><h2>AURA</h2><div class="sb">SYNTH BASS</div><div id="licMsg"></div>
+   <input id="licMail" type="email" placeholder="SEU E-MAIL" autocomplete="email" spellcheck="false" hidden>
    <input id="licKey" placeholder="CHAVE DE ATIVAÇÃO" autocomplete="off" spellcheck="false"><div class="er" id="licErr"></div>
-   <div class="bt"><button class="pr" id="licGo">ATIVAR</button><button id="licBuy">COMPRAR</button><button id="licTry" hidden>CONTINUAR TESTE</button></div>
+   <div class="bt"><button class="pr" id="licGo">ATIVAR</button><button id="licBuy">COMPRAR</button><button id="licHave" hidden>JÁ TENHO UMA CHAVE</button><button id="licTry" hidden>CONTINUAR TESTE</button></div>
    <div class="fn" id="licFn"></div></div>`; document.body.appendChild(ov);
   const chip=document.createElement('div'); chip.id='licChip'; chip.hidden=true; document.body.appendChild(chip);
 
@@ -2540,6 +2541,7 @@
     const now=Date.now();
     if(st.seen && now < st.seen - DAY){ status='clock'; return; }       // relógio atrasado: trata como expirado
     if(st.key && st.inst){ status = (now-st.val) <= CFG.graceDays*DAY ? 'licensed' : 'recheck'; return; }
+    if(CFG.trialApi && (!st.t0 || !st.email)){ status='email'; return; }        // teste só começa depois de informar o e-mail
     const left=CFG.trialDays - Math.floor((now-st.t0)/DAY);
     status = left>0 ? 'trial' : 'expired'; info=left;
   }
@@ -2551,22 +2553,35 @@
   }
   function ok(){ return status==='trial'||status==='licensed'; }
   function show(optional){
-    const m=$('licMsg'), tryB=$('licTry'); $('licErr').textContent='';
-    tryB.hidden = !(optional && status==='trial');
+    const m=$('licMsg'), tryB=$('licTry'), mail=$('licMail'), have=$('licHave'); $('licErr').textContent='';
+    tryB.hidden = !(optional && status==='trial'); mail.hidden=true; have.hidden=true;
     let h='';
-    if(status==='licensed'){ h='<p><b>Licença ativa</b> neste aparelho ('+(st.name||devName())+').</p><p>Chave: <b>'+st.key.slice(0,8)+'••••••••</b></p>'; $('licKey').hidden=true; $('licGo').textContent='DESATIVAR ESTE APARELHO'; }
+    if(status==='email' && !keyMode){ $('licKey').hidden=true; mail.hidden=false; have.hidden=false; have.textContent='JÁ TENHO UMA CHAVE'; $('licGo').textContent='INICIAR TESTE GRÁTIS';
+      h='<p><b>Teste grátis de '+CFG.trialDays+' dias</b> com todos os recursos. Informe seu e-mail para começar.</p><p>Cada e-mail só pode usar o teste uma vez. É preciso estar conectado à internet neste primeiro passo.</p>'; }
+    else if(status==='licensed'){ h='<p><b>Licença ativa</b> neste aparelho ('+(st.name||devName())+').</p><p>Chave: <b>'+st.key.slice(0,8)+'••••••••</b></p>'; $('licKey').hidden=true; $('licGo').textContent='DESATIVAR ESTE APARELHO'; }
     else{ $('licKey').hidden=false; $('licGo').textContent='ATIVAR';
-      h = status==='trial' ? '<p><b>Teste grátis:</b> restam '+info+' dia(s) com todos os recursos.</p><p>Já comprou? Cole a chave abaixo.</p>'
+      if(status==='email'){ have.hidden=false; have.textContent='VOLTAR AO TESTE GRÁTIS'; }
+      h = status==='email' ? '<p>Cole abaixo a chave de ativação que você recebeu na compra.</p>'
+        : status==='trial' ? '<p><b>Teste grátis:</b> restam '+info+' dia(s) com todos os recursos.</p><p>Já comprou? Cole a chave abaixo.</p>'
         : status==='clock' ? '<p><b>O relógio do sistema parece ter sido alterado.</b> Corrija a data e hora, ou ative uma chave.</p>'
         : status==='recheck' ? '<p><b>Precisamos revalidar sua licença.</b> Conecte-se à internet e toque em ATIVAR.</p>'
-        : '<p><b>Seu teste de '+CFG.trialDays+' dias terminou.</b> Para continuar usando o AURA, insira sua chave de ativação.</p>'; }
+        : (st.reused ? '<p><b>Este e-mail já usou o teste grátis.</b> Para usar o AURA, insira sua chave de ativação.</p>'
+          : '<p><b>Seu teste de '+CFG.trialDays+' dias terminou.</b> Para continuar usando o AURA, insira sua chave de ativação.</p>'); }
     m.innerHTML=h; $('licFn').textContent='Cada chave vale para até 3 aparelhos seus. Aparelho: '+devName()+' · v'+(D.version||'');
     ov.classList.add('on'); }
   function hide(){ ov.classList.remove('on'); }
+  $('licHave').onclick=()=>{ keyMode=!keyMode; show(); };
+  async function postTrial(body){ if(D.http) return D.http(CFG.trialApi+'/trial',body); const r=await fetch(CFG.trialApi+'/trial',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(body)}); let j={}; try{ j=await r.json(); }catch(e){ dbg(e); } j._http=r.status; return j; }
+  async function startTrial(){ const er=$('licErr'), email=($('licMail').value||'').trim().toLowerCase();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)){ er.textContent='Digite um e-mail válido.'; return; }
+    let j; try{ j=await postTrial({email:email,device:D.deviceId||''}); }catch(e){ er.textContent='Sem conexão com o servidor. O primeiro acesso precisa de internet para registrar o teste.'; return; }
+    if(!j||!j.ok||!j.started_at){ er.textContent=(j&&j.error)||'Não foi possível iniciar o teste agora. Tente de novo.'; return; }
+    st.email=email; st.t0=st.t0?Math.min(st.t0,j.started_at):j.started_at; st.reused=(j.new===false); const now=Date.now(); if(now>st.seen) st.seen=now; await save(); evalStatus(); paint(); if(ok()) hide(); else show(); }
   $('licTry').onclick=hide; ov.addEventListener('keydown',e=>{ if(e.key==='Enter') $('licGo').click(); if(e.key==='Escape'&&ok()) hide(); });
   $('licBuy').onclick=()=>D.openExternal?D.openExternal(CFG.buyUrl):window.open(CFG.buyUrl);
   $('licGo').onclick=async()=>{ const er=$('licErr'), b=$('licGo'); er.textContent=''; b.disabled=true;
     try{
+      if(status==='email' && !keyMode){ await startTrial(); return; }
       if(status==='licensed'){ const j=await call('/deactivate',{license_key:st.key,instance_id:st.inst}); if(j.deactivated||j._http===404){ st.key=st.inst=''; st.val=0; await save(); evalStatus(); paint(); show(); } else er.textContent=j.error||'Não foi possível desativar agora.'; return; }
       const key=($('licKey').value||'').trim(); if(!key){ er.textContent='Cole a chave de ativação.'; return; }
       const j=await call('/activate',{license_key:key,instance_name:devName()});
@@ -2578,9 +2593,9 @@
   async function revalidate(){ if(!(st.key&&st.inst)) return; try{ const j=await call('/validate',{license_key:st.key,instance_id:st.inst});
       if(j.valid){ st.val=Date.now(); await save(); } else if(j._http && j._http<500 && j.valid===false){ st.key=st.inst=''; st.val=0; await save(); } }catch(e){ dbg(e); } evalStatus(); paint(); if(!ok()) show(); }
 
-  const api={ ok, show:()=>show(false), status:()=>status, _st:()=>st, _reload:async()=>{ await load(); evalStatus(); paint(); } };
+  const api={ ok, show:()=>{ if(!ov.classList.contains('on')) show(false); }, status:()=>status, _st:()=>st, _reload:async()=>{ await load(); evalStatus(); paint(); } };
   window.AuraLic=api;
-  (async()=>{ await load(); const now=Date.now(); if(!st.t0) st.t0=now; if(now>st.seen) st.seen=now; await save(); evalStatus(); paint(); if(!ok()) show(); else await revalidate(); window.__licReady=true; })();
+  (async()=>{ await load(); const now=Date.now(); if(!st.t0 && !CFG.trialApi) st.t0=now; if(now>st.seen) st.seen=now; await save(); evalStatus(); paint(); if(!ok()) show(); else await revalidate(); window.__licReady=true; })();
   setInterval(()=>{ const now=Date.now(); if(now>st.seen){ st.seen=now; save(); } evalStatus(); paint(); if(!ok()){ show(); try{ if(window.panicAll) window.panicAll(); }catch(e){ dbg(e); } } },60000);
 })();
 </script>

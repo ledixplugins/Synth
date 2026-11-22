@@ -1,0 +1,8 @@
+name = "aura-trial"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "aura-trials"
+database_id = "8fbf24de-607a-4051-ab41-0d31185c54f3"
