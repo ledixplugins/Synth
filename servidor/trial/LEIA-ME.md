@@ -10,7 +10,7 @@ Banco D1 `aura-trials` (id 8fbf24de-607a-4051-ab41-0d31185c54f3) e a tabela `tri
 3. Settings → Bindings → Add → D1 database. Variable name: `DB`. Database: `aura-trials`. Salvar e fazer Deploy.
 4. (Recomendado) Settings → Variables and secrets → Add → tipo Secret, nome `TRIAL_SALT`, valor: qualquer texto longo e aleatório. Guarde esse texto: se trocar depois, os e-mails antigos deixam de ser reconhecidos.
 5. Abra o endereço do Worker (`https://aura-trial.<seu-subdominio>.workers.dev`) no navegador. Deve aparecer `{"ok":true,"servico":"aura-trial"}`.
-6. Informe esse endereço no `trialApi` de `index.html` (comercial). Enquanto `trialApi` estiver vazio, o app não pede e-mail.
+6. Informe esse endereço no `trialApi` de `index.html` (comercial). Já está ligado: https://aura-trial.ledixplugins.workers.dev (se `trialApi` ficar vazio, o app não pede e-mail).
 
 ## Como funciona
 `POST /trial` com `email` e `device`. Se o e-mail nunca foi usado, grava a data de início e responde `new: true`. Se já foi, responde a data original com `new: false`, e o prazo não reinicia. Apelidos do Gmail (pontos e `+algo`) contam como o mesmo e-mail.

@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright
 URL='http://localhost:8765/index.html'; DAY=86400000
 def mk(pg,store):
     pg.add_init_script("""window.__store=%s;
-    window.auraDesktop={deviceId:'D1',deviceName:'Mac',version:'1.0.0',config:{api:'https://lic.test/v1/licenses'},
+    window.auraDesktop={deviceId:'D1',deviceName:'Mac',version:'1.0.0',config:{api:'https://lic.test/v1/licenses',trialApi:''},
       store:{get:async k=>window.__store[k]||null,set:async(k,v)=>{window.__store[k]=v}}, openExternal:u=>{}};"""%json.dumps(store))
 KEY='aura_user_presets_v1'
 falhas=[]

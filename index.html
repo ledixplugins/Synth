@@ -2509,7 +2509,7 @@
 (function(){
   const dbg=function(e){ try{ if(window.auraDbg) window.auraDbg(e); }catch(_){ /* só registro */ } };
   const D=window.auraDesktop; if(!D) return;           // app web: sem licenciamento
-  const CFG=Object.assign({ api:'https://api.lemonsqueezy.com/v1/licenses', trialDays:15, graceDays:30, buyUrl:'https://ledixplugins.com.br/aurasynthbass/', trialApi:'' }, D.config||{});
+  const CFG=Object.assign({ api:'https://api.lemonsqueezy.com/v1/licenses', trialDays:15, graceDays:30, buyUrl:'https://ledixplugins.com.br/aurasynthbass/', trialApi:'https://aura-trial.ledixplugins.workers.dev' }, D.config||{});
   const DAY=86400000, $=id=>document.getElementById(id);
   let st={ t0:0, seen:0, key:'', inst:'', val:0, name:'', email:'', reused:false }, status='trial', info='', keyMode=false;
   const css=document.createElement('style'); css.textContent=`

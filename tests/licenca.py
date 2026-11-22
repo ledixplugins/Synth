@@ -5,7 +5,7 @@ URL='http://localhost:8765/index.html'; DAY=86400000
 def mk(pg,store,dev='DEVICE-AAAA1111'):
     pg.add_init_script("""
     window.__store=%s;
-    window.auraDesktop={deviceId:'%s',deviceName:'MacBook',version:'1.0.0',config:{api:'https://lic.test/v1/licenses'},
+    window.auraDesktop={deviceId:'%s',deviceName:'MacBook',version:'1.0.0',config:{api:'https://lic.test/v1/licenses',trialApi:''},
       store:{get:async k=>window.__store[k]||null,set:async(k,v)=>{window.__store[k]=v}}, openExternal:u=>{window.__opened=u}};
     """%(json.dumps(store),dev))
 def server(pg,state):
