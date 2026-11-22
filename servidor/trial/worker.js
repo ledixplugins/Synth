@@ -21,6 +21,12 @@ async function sha256(s) {
   const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
   return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
 }
+async function hmac(chave, texto) {
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(chave), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const b = await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(texto));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+const igual = (a, b) => { a = String(a || ''); b = String(b || ''); if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0; };
 async function corpo(req) {
   const t = req.headers.get('content-type') || '';
   try {
@@ -38,6 +44,15 @@ export default {
 
     const b = await corpo(req), e = normaliza(b.email);
     if (!e) return json({ ok: false, error: 'Digite um e-mail válido.' }, 400);
+    // Acesso total do dono: só com o e-mail listado em OWNER_EMAILS E o código secreto OWNER_CODE (ou a prova assinada que o próprio Worker deu antes).
+    if (b.owner_code || b.owner_token) {
+      const donos = String(env.OWNER_EMAILS || '').split(/[\s,;]+/).map(normaliza).filter(Boolean);
+      const dev0 = String(b.device || '').slice(0, 64);
+      if (!env.OWNER_CODE || !donos.includes(e)) return json({ ok: false, error: 'Código inválido.' }, 403);
+      const tok = await hmac(env.OWNER_CODE, 'dono|' + e + '|' + dev0);
+      if (igual(b.owner_code, env.OWNER_CODE) || igual(b.owner_token, tok)) return json({ ok: true, owner: true, owner_token: tok, started_at: Date.now(), new: false });
+      return json({ ok: false, error: 'Código inválido.' }, 403);
+    }
     const h = await sha256((env.TRIAL_SALT || '') + '|' + e), agora = Date.now(), dev = String(b.device || '').slice(0, 64);
     const ins = await env.DB.prepare('INSERT OR IGNORE INTO trials (product, email_hash, started_at, device) VALUES (?, ?, ?, ?)').bind(PRODUCT, h, agora, dev).run();
     const novo = (ins.meta && ins.meta.changes) === 1;

@@ -11,6 +11,11 @@ def servidor(pg,db,off=False):
         if route.request.method=='OPTIONS': return route.fulfill(status=204,headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'*'})
         if off: return route.abort()
         kv={k:up.unquote_plus(v) for k,v in (x.split('=',1) for x in (route.request.post_data or '').split('&') if '=' in x)}
+        if 'owner_code' in kv or 'owner_token' in kv:
+            tok='tok-'+kv.get('device','')
+            if kv.get('email','').lower()=='dono@exemplo.com' and (kv.get('owner_code')=='segredo' or kv.get('owner_token')==tok):
+                return route.fulfill(status=200,content_type='application/json',headers={'access-control-allow-origin':'*'},body=json.dumps({'ok':True,'owner':True,'owner_token':tok,'started_at':int(time.time()*1000),'new':False}))
+            return route.fulfill(status=403,content_type='application/json',headers={'access-control-allow-origin':'*'},body=json.dumps({'ok':False,'error':'Código inválido.'}))
         e=kv.get('email','').lower(); l,d=e.split('@'); l=l.split('+')[0]; l=l.replace('.','') if d=='gmail.com' else l; k=l+'@'+d
         novo=k not in db
         if novo: db[k]=int(time.time()*1000)
@@ -48,5 +53,16 @@ with sync_playwright() as p:
     chk('sem internet: avisa e continua bloqueado','internet' in pg.inner_text('#licErr') and pg.evaluate('AuraLic.status()')=='email'); 
     # 6) "já tenho uma chave" mostra o campo da chave
     pg.click('#licHave'); chk('"Já tenho uma chave" mostra o campo da chave',not pg.evaluate("document.getElementById('licKey').hidden") and pg.evaluate("document.getElementById('licMail').hidden")); pg.close()
+    # 7) acesso total do dono: e-mail + código secreto
+    pg=abre({},dev='DEV-6'); chk('link "acesso do desenvolvedor" aparece na tela de e-mail',not pg.evaluate("document.getElementById('licOwnerLnk').hidden"))
+    pg.click('#licOwnerLnk'); pg.fill('#licMail','dono@exemplo.com'); pg.fill('#licOwner','errado'); pg.click('#licGo'); pg.wait_for_timeout(400)
+    chk('código errado é recusado','inválido' in pg.inner_text('#licErr') and pg.evaluate('AuraLic.status()')=='email')
+    pg.fill('#licOwner','segredo'); pg.click('#licGo'); pg.wait_for_timeout(500)
+    chk('código certo: acesso total sem chave e sem prazo',pg.evaluate('AuraLic.status()')=='licensed' and 'ACESSO TOTAL' in pg.inner_text('#licChip') and not ov(pg))
+    saved=pg.evaluate("window.__store.lic"); pg.close()
+    pg=abre({'lic':saved},dev='DEV-6'); chk('reabrir: continua com acesso total',pg.evaluate('AuraLic.status()')=='licensed' and not ov(pg)); pg.close()
+    pg=abre({'lic':saved},dev='DEV-7'); chk('prova de outro aparelho é recusada na revalidação: volta a pedir e-mail',pg.evaluate('AuraLic.status()')=='email' and ov(pg)); pg.close()
+    pg=abre({},dev='DEV-8'); pg.click('#licOwnerLnk'); pg.fill('#licMail','outra.pessoa@exemplo.com'); pg.fill('#licOwner','segredo'); pg.click('#licGo'); pg.wait_for_timeout(400)
+    chk('outro e-mail com o código certo é recusado',pg.evaluate('AuraLic.status()')=='email' and 'inválido' in pg.inner_text('#licErr')); pg.close()
     b.close()
 sys.exit(1 if falhas else 0)

@@ -16,3 +16,10 @@ Banco D1 `aura-trials` (id 8fbf24de-607a-4051-ab41-0d31185c54f3) e a tabela `tri
 `POST /trial` com `email` e `device`. Se o e-mail nunca foi usado, grava a data de início e responde `new: true`. Se já foi, responde a data original com `new: false`, e o prazo não reinicia. Apelidos do Gmail (pontos e `+algo`) contam como o mesmo e-mail.
 
 Limite: sem confirmação por código, quem digitar um e-mail diferente (inventado) começa um teste novo.
+
+## Acesso total do dono (sem chave nem prazo)
+No Worker, em Settings → Variables and secrets, crie:
+- `OWNER_EMAILS` (tipo Secret ou Text): o(s) e-mail(s) do dono, separados por vírgula.
+- `OWNER_CODE` (tipo Secret): um código longo e aleatório que só o dono sabe.
+
+No app, na tela de e-mail, toque em "acesso do desenvolvedor", digite o e-mail e o código e toque em INICIAR TESTE GRÁTIS. O selo passa a mostrar ACESSO TOTAL. O app guarda uma prova assinada, ligada ao aparelho, e a revalida pela internet (tolerância offline de 30 dias). Só o e-mail, sem o código, não libera nada.
