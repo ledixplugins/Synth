@@ -1011,8 +1011,11 @@
        a:0.01, d:0.90, s:0.20, r:0.06, vol:1.79, efx:{d:0, m:0, rv:0}}),
     F({name:'ZAP DROP', oct:-1, wave:'triangle', lvl:1.0, sub:0, cut:0.60, res:0, fenv:0, kt:0, pa:24, pd:0.18,
        a:0.003, d:0.16, s:0, r:0.08, vol:1.78, efx:{d:0, m:0, rv:0}}),
+    // Os dois sons juntos: o zap cai no início e o ping senoidal assume e sustenta. Toque perto de Sol2.
+    F({name:'ZAP + PING', oct:-1, wave:'triangle', lvl:0.35, w2:'triangle', o2:3, d2:1, l2:0.55, sub:0, cut:0.65, res:0, fenv:0, kt:0, pa:24, pd:0.12,
+       a:0.003, d:0.90, s:0.25, r:0.08, vol:2.3, efx:{d:0, m:0, rv:0}}),
   ];
-  const FAMILIAS = [["SUB", ["DEEP SUB BASS", "SUB BASS", "SUB BASS (SOFT)", "SUB BASS (HARD)", "SUB BASS (808)", "SUB", "SUB AGRO", "SUB ARP", "SUB AGRO ARP"]], ["DRIVE", ["DRIVE", "DRIVE (STAGE 2)", "DRIVE (SOFT)", "DRIVE (HEAVY)", "BAD!BASS"]], ["OCTAVE", ["OCTAVE (CLEAN)", "OCTAVE (WILD)", "OCTAVE (SOFT)", "OCTAVE (HARD)"]], ["FUNK, POP E ROCK", ["FUNK (PLUCK)", "FUNK (SLAP)", "POP (ROUND)", "ROCK (GRIT)", "$24$"]], ["LEAD", ["LEAD (MONO)", "LEAD (SOFT)", "DUO-GLIDE"]], ["PLUCK", ["PLUCK (SHORT)", "PLUCK (WARM)", "HRD PLUCK"]], ["CHORUS E ESPECIAIS", ["CHURCH SYNTH BASS", "CHORUS", "CHORUS (WIDE)", "ANGRY DROP", "SINE PING", "ZAP DROP"]]];   // título de cada grupo na lista de presets
+  const FAMILIAS = [["SUB", ["DEEP SUB BASS", "SUB BASS", "SUB BASS (SOFT)", "SUB BASS (HARD)", "SUB BASS (808)", "SUB", "SUB AGRO", "SUB ARP", "SUB AGRO ARP"]], ["DRIVE", ["DRIVE", "DRIVE (STAGE 2)", "DRIVE (SOFT)", "DRIVE (HEAVY)", "BAD!BASS"]], ["OCTAVE", ["OCTAVE (CLEAN)", "OCTAVE (WILD)", "OCTAVE (SOFT)", "OCTAVE (HARD)"]], ["FUNK, POP E ROCK", ["FUNK (PLUCK)", "FUNK (SLAP)", "POP (ROUND)", "ROCK (GRIT)", "$24$"]], ["LEAD", ["LEAD (MONO)", "LEAD (SOFT)", "DUO-GLIDE"]], ["PLUCK", ["PLUCK (SHORT)", "PLUCK (WARM)", "HRD PLUCK"]], ["CHORUS E ESPECIAIS", ["CHURCH SYNTH BASS", "CHORUS", "CHORUS (WIDE)", "ANGRY DROP", "SINE PING", "ZAP DROP", "ZAP + PING"]]];   // título de cada grupo na lista de presets
   const FAMILIA_DE = {}; FAMILIAS.forEach(([f,l])=>l.forEach(n=>FAMILIA_DE[n]=f));
   const UKEY='aura_user_presets_v1', LKEY='aura_last_preset_v1', FKEY='aura_favs_v1', FOKEY='aura_fav_only_v1';
   const asList = v => Array.isArray(v) ? v : [];
