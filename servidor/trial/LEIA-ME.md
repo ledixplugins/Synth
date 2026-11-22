@@ -2,7 +2,7 @@
 
 Guarda quais e-mails já usaram o teste de 15 dias. Só o resumo SHA-256 do e-mail é gravado, nunca o e-mail em texto.
 
-Banco D1 `aura-trials` (id 8fbf24de-607a-4051-ab41-0d31185c54f3) e a tabela `trials` já foram criados na conta.
+Banco D1 `aura-trials` (id 8fbf24de-607a-4051-ab41-0d31185c54f3) e a tabela `trials` já foram criados na conta. A tabela agora guarda o teste por produto: chave (product, email_hash), e este Worker usa product = `synthbass`.
 
 ## Publicar o Worker (painel do Cloudflare, uns 3 minutos)
 1. Workers & Pages → Create → Create Worker. Nome: `aura-trial`. Deploy.

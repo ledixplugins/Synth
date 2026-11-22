@@ -2,6 +2,9 @@
 // © 2026 Thiago R. Galvão. Todos os direitos reservados.
 // Guarda só o resumo criptografado (SHA-256) do e-mail, nunca o e-mail em texto. Um e-mail só inicia o teste uma vez:
 // se já existe, devolve a data original de início, então o prazo de 15 dias não reinicia.
+// A tabela guarda o teste por produto (chave: product + email_hash). Este Worker é só do AURA Synth Bass e o produto é fixo
+// no servidor, nunca vem do aplicativo (senão bastaria trocar o nome do produto para reiniciar o teste).
+const PRODUCT = 'synthbass';
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-allow-headers': 'content-type' };
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...CORS, 'content-type': 'application/json' } });
 
@@ -36,9 +39,9 @@ export default {
     const b = await corpo(req), e = normaliza(b.email);
     if (!e) return json({ ok: false, error: 'Digite um e-mail válido.' }, 400);
     const h = await sha256((env.TRIAL_SALT || '') + '|' + e), agora = Date.now(), dev = String(b.device || '').slice(0, 64);
-    const ins = await env.DB.prepare('INSERT OR IGNORE INTO trials (email_hash, started_at, device) VALUES (?, ?, ?)').bind(h, agora, dev).run();
+    const ins = await env.DB.prepare('INSERT OR IGNORE INTO trials (product, email_hash, started_at, device) VALUES (?, ?, ?, ?)').bind(PRODUCT, h, agora, dev).run();
     const novo = (ins.meta && ins.meta.changes) === 1;
-    const row = await env.DB.prepare('SELECT started_at FROM trials WHERE email_hash = ?').bind(h).first();
+    const row = await env.DB.prepare('SELECT started_at FROM trials WHERE product = ? AND email_hash = ?').bind(PRODUCT, h).first();
     if (!row) return json({ ok: false, error: 'Não foi possível registrar agora. Tente de novo.' }, 500);
     return json({ ok: true, started_at: row.started_at, new: novo });
   }
