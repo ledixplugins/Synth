@@ -2511,7 +2511,7 @@
   const D=window.auraDesktop; if(!D) return;           // app web: sem licenciamento
   const CFG=Object.assign({ api:'https://api.lemonsqueezy.com/v1/licenses', trialDays:15, graceDays:30, buyUrl:'https://ledixplugins.com.br/aurasynthbass/', trialApi:'https://aura-trial.ledixplugins.workers.dev' }, D.config||{});
   const DAY=86400000, $=id=>document.getElementById(id);
-  let st={ t0:0, seen:0, key:'', inst:'', val:0, name:'', email:'', reused:false, owner:'', ownval:0 }, status='trial', info='', keyMode=false, ownerOpen=false;
+  let st={ t0:0, seen:0, key:'', inst:'', val:0, name:'', email:'', reused:false, owner:'', ownval:0 }, status='trial', info='', keyMode=false, ownerOpen=false, ownerMode=false;
   const css=document.createElement('style'); css.textContent=`
   #licOv{position:fixed;inset:0;z-index:100000;background:rgba(6,6,7,.92);display:none;align-items:center;justify-content:center;font-family:"Avenir Next",Futura,"Helvetica Neue",Arial,sans-serif;color:#e2e5ea}
   #licOv.on{display:flex}
@@ -2558,7 +2558,9 @@
     const m=$('licMsg'), tryB=$('licTry'), mail=$('licMail'), have=$('licHave'); $('licErr').textContent='';
     tryB.hidden = !(optional && status==='trial'); mail.hidden=true; have.hidden=true; $('licOwner').hidden=true; $('licOwnerLnk').hidden=true;
     let h='';
-    if(status==='email' && !keyMode){ $('licKey').hidden=true; mail.hidden=false; have.hidden=false; have.textContent='JÁ TENHO UMA CHAVE'; $('licGo').textContent='INICIAR TESTE GRÁTIS'; $('licOwnerLnk').hidden=false; $('licOwner').hidden=!ownerOpen;
+    if(ownerMode && status!=='licensed'){ $('licKey').hidden=true; mail.hidden=false; $('licOwner').hidden=false; have.hidden=false; have.textContent='VOLTAR'; $('licGo').textContent='ENTRAR COMO DONO';
+      h='<p><b>Acesso do desenvolvedor.</b> Informe o e-mail e o código secreto.</p>'; }
+    else if(status==='email' && !keyMode){ $('licKey').hidden=true; mail.hidden=false; have.hidden=false; have.textContent='JÁ TENHO UMA CHAVE'; $('licGo').textContent='INICIAR TESTE GRÁTIS'; $('licOwnerLnk').hidden=false; $('licOwner').hidden=!ownerOpen;
       h='<p><b>Teste grátis de '+CFG.trialDays+' dias</b> com todos os recursos. Informe seu e-mail para começar.</p><p>Cada e-mail só pode usar o teste uma vez. É preciso estar conectado à internet neste primeiro passo.</p>'; }
     else if(status==='licensed' && st.owner){ h='<p><b>Acesso total</b> do desenvolvedor neste aparelho.</p>'; $('licKey').hidden=true; $('licGo').textContent='SAIR DO ACESSO TOTAL'; }
     else if(status==='licensed'){ h='<p><b>Licença ativa</b> neste aparelho ('+(st.name||devName())+').</p><p>Chave: <b>'+st.key.slice(0,8)+'••••••••</b></p>'; $('licKey').hidden=true; $('licGo').textContent='DESATIVAR ESTE APARELHO'; }
@@ -2570,23 +2572,25 @@
         : status==='recheck' ? '<p><b>Precisamos revalidar sua licença.</b> Conecte-se à internet e toque em ATIVAR.</p>'
         : (st.reused ? '<p><b>Este e-mail já usou o teste grátis.</b> Para usar o AURA, insira sua chave de ativação.</p>'
           : '<p><b>Seu teste de '+CFG.trialDays+' dias terminou.</b> Para continuar usando o AURA, insira sua chave de ativação.</p>'); }
+    $('licOwnerLnk').hidden = status==='licensed' || ownerMode || (status==='email' && keyMode);
     m.innerHTML=h; $('licFn').textContent='Cada chave vale para até 3 aparelhos seus. Aparelho: '+devName()+' · v'+(D.version||'');
     ov.classList.add('on'); }
   function hide(){ ov.classList.remove('on'); }
-  $('licOwnerLnk').onclick=e=>{ e.preventDefault(); ownerOpen=!ownerOpen; $('licOwner').hidden=!ownerOpen; if(ownerOpen) $('licOwner').focus(); };
-  $('licHave').onclick=()=>{ keyMode=!keyMode; show(); };
+  $('licOwnerLnk').onclick=e=>{ e.preventDefault(); if(status==='email'){ ownerOpen=!ownerOpen; $('licOwner').hidden=!ownerOpen; if(ownerOpen) $('licOwner').focus(); } else { ownerMode=true; show(); } };
+  $('licHave').onclick=()=>{ if(ownerMode){ ownerMode=false; show(); return; } keyMode=!keyMode; show(); };
   async function postTrial(body){ if(D.http) return D.http(CFG.trialApi+'/trial',body); const r=await fetch(CFG.trialApi+'/trial',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(body)}); let j={}; try{ j=await r.json(); }catch(e){ dbg(e); } j._http=r.status; return j; }
   async function startTrial(){ const er=$('licErr'), email=($('licMail').value||'').trim().toLowerCase();
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)){ er.textContent='Digite um e-mail válido.'; return; }
-    const body={email:email,device:D.deviceId||''}, oc=ownerOpen?($('licOwner').value||'').trim():''; if(oc) body.owner_code=oc;
+    const body={email:email,device:D.deviceId||''}, oc=(ownerOpen||ownerMode)?($('licOwner').value||'').trim():''; if(oc) body.owner_code=oc; else if(ownerMode){ er.textContent='Digite o código do desenvolvedor.'; return; }
     let j; try{ j=await postTrial(body); }catch(e){ er.textContent='Sem conexão com o servidor. O primeiro acesso precisa de internet para registrar o teste.'; return; }
     if(!j||!j.ok||!j.started_at){ er.textContent=(j&&j.error)||'Não foi possível iniciar o teste agora. Tente de novo.'; return; }
-    if(j.owner&&j.owner_token){ st.email=email; st.owner=j.owner_token; st.ownval=Date.now(); const n0=Date.now(); if(n0>st.seen) st.seen=n0; await save(); evalStatus(); paint(); hide(); try{ window.dispatchEvent(new Event('aura-licensed')); }catch(e){ dbg(e); } return; }
+    if(j.owner&&j.owner_token){ ownerMode=false; st.email=email; st.owner=j.owner_token; st.ownval=Date.now(); const n0=Date.now(); if(n0>st.seen) st.seen=n0; await save(); evalStatus(); paint(); hide(); try{ window.dispatchEvent(new Event('aura-licensed')); }catch(e){ dbg(e); } return; }
     st.email=email; st.t0=st.t0?Math.min(st.t0,j.started_at):j.started_at; st.reused=(j.new===false); const now=Date.now(); if(now>st.seen) st.seen=now; await save(); evalStatus(); paint(); if(ok()) hide(); else show(); }
   $('licTry').onclick=hide; ov.addEventListener('keydown',e=>{ if(e.key==='Enter') $('licGo').click(); if(e.key==='Escape'&&ok()) hide(); });
   $('licBuy').onclick=()=>D.openExternal?D.openExternal(CFG.buyUrl):window.open(CFG.buyUrl);
   $('licGo').onclick=async()=>{ const er=$('licErr'), b=$('licGo'); er.textContent=''; b.disabled=true;
     try{
+      if(ownerMode && status!=='licensed'){ await startTrial(); return; }
       if(status==='email' && !keyMode){ await startTrial(); return; }
       if(status==='licensed' && st.owner){ st.owner=''; st.ownval=0; await save(); evalStatus(); paint(); show(); return; }
       if(status==='licensed'){ const j=await call('/deactivate',{license_key:st.key,instance_id:st.inst}); if(j.deactivated||j._http===404){ st.key=st.inst=''; st.val=0; await save(); evalStatus(); paint(); show(); } else er.textContent=j.error||'Não foi possível desativar agora.'; return; }

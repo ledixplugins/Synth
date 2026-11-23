@@ -64,5 +64,11 @@ with sync_playwright() as p:
     pg=abre({'lic':saved},dev='DEV-7'); chk('prova de outro aparelho é recusada na revalidação: volta a pedir e-mail',pg.evaluate('AuraLic.status()')=='email' and ov(pg)); pg.close()
     pg=abre({},dev='DEV-8'); pg.click('#licOwnerLnk'); pg.fill('#licMail','outra.pessoa@exemplo.com'); pg.fill('#licOwner','segredo'); pg.click('#licGo'); pg.wait_for_timeout(400)
     chk('outro e-mail com o código certo é recusado',pg.evaluate('AuraLic.status()')=='email' and 'inválido' in pg.inner_text('#licErr')); pg.close()
+    # 8) quem já está em teste (e-mail registrado) também alcança o acesso do dono pela janela do selo
+    t1=int(time.time()*1000)-5*DAY; pg=abre({'lic':json.dumps({'t0':t1,'seen':t1+DAY,'email':'dono@exemplo.com'})},dev='DEV-9')
+    chk('em teste: restam 10 dias e a janela não abre sozinha','10 DIAS' in pg.inner_text('#licChip') and not ov(pg))
+    pg.click('#licChip'); chk('janela do selo tem o link do dono',not pg.evaluate("document.getElementById('licOwnerLnk').hidden"))
+    pg.click('#licOwnerLnk'); pg.fill('#licMail','dono@exemplo.com'); pg.fill('#licOwner','segredo'); pg.click('#licGo'); pg.wait_for_timeout(500)
+    chk('dono entra pela janela do selo: acesso total',pg.evaluate('AuraLic.status()')=='licensed' and 'ACESSO TOTAL' in pg.inner_text('#licChip') and not ov(pg)); pg.close()
     b.close()
 sys.exit(1 if falhas else 0)
