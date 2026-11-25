@@ -933,6 +933,8 @@
   }
   const F = p => Object.assign(norm(p), {factory:true});
   const FACTORY = [
+    // Destaque (sempre o primeiro da lista)
+    F({name:'CHURCH SYNTH BASS', oct:-2, wave:'square', lvl:1.0, sub:0, cut:0.0560, fenv:1.04, kt:0.667, glide:0, a:0.002, d:0.25, s:0.60, r:0.25, vol:1.69}),
     // Sub
     F({name:'DEEP SUB BASS', oct:-1, wave:'square',   lvl:0.75, sub:0.35, cut:0.41, fenv:0.8, kt:0, glide:0.03,  a:0.008, d:0.295, s:0.59, r:0.19, vol:1.57}),
     F({name:'SUB BASS', oct:-2, wave:'sawtooth', sw:1, lvl:0.62, sub:0.62, cut:0.35, res:0.40, fenv:0.39, kt:0.20, drv:0.50, ovl:0.40,
@@ -1004,7 +1006,6 @@
     F({name:'HRD PLUCK', oct:-1, wave:'sawtooth', lvl:0.85, sub:0.25, cut:0.20, res:0.25, fenv:2.60, kt:0.35, drv:0.55, ovl:0.30,
        fa:0.002, fd:0.12, fs:0.0, fr:0.08, a:0.002, d:0.20, s:0.0, r:0.08, vol:1.55, efx:{d:0, m:0, rv:0}}),
     // Chorus e Especiais
-    F({name:'CHURCH SYNTH BASS', oct:-2, wave:'square', lvl:1.0, sub:0, cut:0.0560, fenv:1.04, kt:0.667, glide:0, a:0.002, d:0.25, s:0.60, r:0.25, vol:1.69}),
     F({name:'CHORUS', oct:-1, wave:'square', lvl:0.80, sub:0.20, cut:0.55, res:0.10, fenv:0.42, kt:0.30, drv:0.18, ovl:0.40,
        fa:0.005, fd:0.32, fs:0.58, fr:0.22, a:0.005, d:0.35, s:0.90, r:0.16, vol:0.90,
        efx:{d:0, m:1, mr:0.30, md:0.47, mb:0.50, rv:0}}),
@@ -1021,7 +1022,7 @@
     F({name:'ZAP + PING', oct:1, wave:'triangle', lvl:1.0, w2:'triangle', o2:1, d2:0, l2:0.16, w3:'triangle', o3:-3, d3:0, k3:1, l3:0.15, sub:0, cut:0.30, res:0, fenv:3.5, fa:0.2, fd:0.5, fs:1, fr:0.1, kt:0, pa:24, pd:0.09,
        a:0.003, d:0.90, s:0.20, r:0.06, vol:1.79, efx:{d:0, m:0, rv:0}}),
   ];
-  const FAMILIAS = [["SUB", ["DEEP SUB BASS", "SUB BASS", "SUB BASS (SOFT)", "SUB BASS (HARD)", "SUB BASS (808)", "SUB", "SUB AGRO", "SUB ARP", "SUB AGRO ARP"]], ["DRIVE", ["DRIVE", "DRIVE (STAGE 2)", "DRIVE (SOFT)", "DRIVE (HEAVY)", "BAD!BASS"]], ["OCTAVE", ["OCTAVE (CLEAN)", "OCTAVE (WILD)", "OCTAVE (SOFT)", "OCTAVE (HARD)"]], ["FUNK, POP E ROCK", ["FUNK (PLUCK)", "FUNK (SLAP)", "POP (ROUND)", "ROCK (GRIT)", "$24$"]], ["LEAD", ["LEAD (MONO)", "LEAD (SOFT)", "DUO-GLIDE"]], ["PLUCK", ["PLUCK (SHORT)", "PLUCK (WARM)", "HRD PLUCK"]], ["CHORUS E ESPECIAIS", ["CHURCH SYNTH BASS", "CHORUS", "CHORUS (WIDE)", "ANGRY DROP", "SINE PING", "ZAP DROP", "ZAP + PING"]]];   // título de cada grupo na lista de presets
+  const FAMILIAS = [["CHURCH", ["CHURCH SYNTH BASS"]], ["SUB", ["DEEP SUB BASS", "SUB BASS", "SUB BASS (SOFT)", "SUB BASS (HARD)", "SUB BASS (808)", "SUB", "SUB AGRO", "SUB ARP", "SUB AGRO ARP"]], ["DRIVE", ["DRIVE", "DRIVE (STAGE 2)", "DRIVE (SOFT)", "DRIVE (HEAVY)", "BAD!BASS"]], ["OCTAVE", ["OCTAVE (CLEAN)", "OCTAVE (WILD)", "OCTAVE (SOFT)", "OCTAVE (HARD)"]], ["FUNK, POP E ROCK", ["FUNK (PLUCK)", "FUNK (SLAP)", "POP (ROUND)", "ROCK (GRIT)", "$24$"]], ["LEAD", ["LEAD (MONO)", "LEAD (SOFT)", "DUO-GLIDE"]], ["PLUCK", ["PLUCK (SHORT)", "PLUCK (WARM)", "HRD PLUCK"]], ["CHORUS E ESPECIAIS", ["CHORUS", "CHORUS (WIDE)", "ANGRY DROP", "SINE PING", "ZAP DROP", "ZAP + PING"]]];   // título de cada grupo na lista de presets
   const FAMILIA_DE = {}; FAMILIAS.forEach(([f,l])=>l.forEach(n=>FAMILIA_DE[n]=f));
   const UKEY='aura_user_presets_v1', LKEY='aura_last_preset_v1', FKEY='aura_favs_v1', FOKEY='aura_fav_only_v1';
   const asList = v => Array.isArray(v) ? v : [];
@@ -1030,7 +1031,9 @@
   let PRESETS = FACTORY.concat(ER,USER);
   let favs = new Set(asList(LS.get(FKEY,[])).filter(x=>typeof x==='string')), favOnly = !!LS.get(FOKEY,false);
   let curPreset = 0, dirty = false;
-  { const l=LS.get(LKEY,0); if(Number.isInteger(l) && l>=0 && l<PRESETS.length) curPreset=l; }
+  { let l=LS.get(LKEY,null);
+    if(!LS.get('aura_ord_v2',0)){ LS.set('aura_ord_v2',1); if(Number.isInteger(l)){ if(l===29) l=0; else if(l>=0 && l<29) l++; LS.set(LKEY,l); } }     // o CHURCH SYNTH BASS passou a ser o nº 1: o preset salvo acompanha
+    if(Number.isInteger(l) && l>=0 && l<PRESETS.length) curPreset=l; }
   const P = {}; PKEYS.forEach(k=>P[k]=PRESETS[curPreset][k]);
 
   let bend = 0, mod = 0, stack = [], sustainOn = false, held = new Set(), gate = false, learnMode = false, lastNote = 36;
@@ -1144,7 +1147,7 @@
   const MAPKEY='aura_cc_map_v1', ACTKEY='aura_act_map_v1', RESERVED=[64,120,123];
   const ACTS = {prev:{el:'pPrev',name:'PRESET ANTERIOR'}, next:{el:'pNext',name:'PRÓXIMO PRESET'}, hold:{el:'lHold',name:'HOLD'}, arp:{el:'lArp',name:'ARPEJADOR'}, panic:{el:'lPanic',name:'PÂNICO'}, safe:{el:'lSafe',name:'PRESET DE EMERGÊNCIA'}};
   function cleanCC(m){ const o={}; if(m&&typeof m==='object') for(const c in m){ if(/^\d{1,3}$/.test(c) && +c<128 && KN[m[c]]) o[c]=m[c]; } return o; }
-  function cleanAct(m){ const o={}; if(m&&typeof m==='object') for(const c in m){ if(/^[cn]\d{1,3}$/.test(c) && ACTS[m[c]]) o[c]=m[c]; } return o; }
+  function cleanAct(m){ const o={}; if(m&&typeof m==='object') for(const c in m){ if(/^[cn]\d{1,3}(@\d{1,2})?$/.test(c) && ACTS[m[c]]) o[c]=m[c]; } return o; }
   let ccMap = cleanCC(LS.get(MAPKEY,{})), actMap = cleanAct(LS.get(ACTKEY,{})), learnTarget=null;
   function drawMap(){
     KNOBS.forEach(k=>k.wrap.classList.remove('mapped'));
@@ -1165,12 +1168,12 @@
     if(on) learnSay('Toque em um knob, numa seta, HOLD ou ARP');
     else { learnSay(null); say((Object.keys(ccMap).length+Object.keys(actMap).length)+' controle(s) mapeado(s)'); }
   }
-  function learnMsgIn(kind,num){       // kind: 'c' (CC) ou 'n' (nota)
+  function learnMsgIn(kind,num,ch){       // kind: 'c' (CC) ou 'n' (nota); ch: canal MIDI (1–16) de onde veio o aperto
     if(learnTarget.startsWith('act:')){
       const a=learnTarget.slice(4);
       Object.keys(actMap).forEach(k=>{ if(actMap[k]===a) delete actMap[k]; });
-      actMap[kind+num]=a; LS.set(ACTKEY,actMap); drawMap();
-      learnSay(ACTS[a].name+' = '+(kind==='c'?'CC ':'NOTA ')+num); clearTarget(); return true;
+      actMap[kind+num+(kind==='n'&&ch?'@'+ch:'')]=a; LS.set(ACTKEY,actMap); drawMap();      // nota guarda o canal: o pad (outro canal) não confunde com a tecla de mesmo número
+      learnSay(ACTS[a].name+' = '+(kind==='c'?'CC ':'NOTA ')+num+(kind==='n'&&ch?' · CANAL '+ch:'')); clearTarget(); return true;
     }
     if(kind!=='c' || RESERVED.includes(num)) return false;
     Object.keys(ccMap).forEach(c=>{ if(ccMap[c]===learnTarget) delete ccMap[c]; });
@@ -2228,7 +2231,7 @@
     const add=(what,src,del)=>{ n++; const r=document.createElement('div'); r.className='mrow'; const l=document.createElement('span'); l.textContent=what; const v=document.createElement('b'); v.textContent=src; r.appendChild(l); r.appendChild(v);
       const x=document.createElement('button'); x.className='btn mini'; x.textContent='✕'; x.setAttribute('aria-label','Remover'); x.addEventListener('click',()=>{ del(); drawMap(); drawMenuSt(); drawMapList(); }); r.appendChild(x); b.appendChild(r); };
     Object.keys(ccMap).sort((a,c)=>a-c).forEach(cc=>{ const k=KN[ccMap[cc]]; add(k.full||k.label,'CC '+cc,()=>{ delete ccMap[cc]; LS.set(MAPKEY,ccMap); }); });
-    Object.keys(actMap).forEach(key=>add(ACTS[actMap[key]].name,(key[0]==='c'?'CC ':'NOTA ')+key.slice(1),()=>{ delete actMap[key]; LS.set(ACTKEY,actMap); }));
+    Object.keys(actMap).forEach(key=>add(ACTS[actMap[key]].name,(key[0]==='c'?'CC ':'NOTA ')+key.slice(1).replace('@',' · CANAL '),()=>{ delete actMap[key]; LS.set(ACTKEY,actMap); }));
     if(!n){ const e=document.createElement('p'); e.textContent='Nada mapeado ainda. Use “Mapear knobs e botões” no menu.'; b.appendChild(e); }
   }
   $('mMap').addEventListener('click',()=>{ closeD('dlgMenu'); drawMapList(); openD('dlgMap'); });
@@ -2333,14 +2336,15 @@
     if(key===dupKey && now0-dupT<15) return;       // o mesmo aperto chegando por duas portas (USB + Bluetooth, ou portas repetidas) conta uma vez só
     dupKey=key; dupT=now0;
     midiUntil=performance.now()+120;
-    const cmd=d[0]&0xF0; let d1=d[1]; const d2=d[2];
+    const cmd=d[0]&0xF0; let d1=d[1]; const d2=d[2], rawN=d[1], chn=(d[0]&0x0F)+1;
+    const actN=()=>actMap['n'+rawN+'@'+chn] || actMap['n'+rawN];      // botões mapeados valem pela nota e canal originais, sem a transposição do teclado
     if(cmd>=0x80 && cmd<0xF0){ if(G.ch>0 && (d[0]&0x0F)+1!==G.ch) return; if(G.xp && cmd<=0xA0) d1=Math.max(0,Math.min(127,d1+G.xp)); }
     if(cmd===0x90 && d2>0){
-      if(learnMode && learnTarget && learnTarget.startsWith('act:')){ learnMsgIn('n',d1); return; }
-      if(actMap['n'+d1]){ doAct(actMap['n'+d1]); return; }
+      if(learnMode && learnTarget && learnTarget.startsWith('act:')){ learnMsgIn('n',rawN,chn); return; }
+      if(actN()){ doAct(actN()); return; }
       followKb(d1); noteOn(d1,d2);
     }
-    else if(cmd===0x80 || (cmd===0x90&&d2===0)){ if(actMap['n'+d1]) return; noteOff(d1); }
+    else if(cmd===0x80 || (cmd===0x90&&d2===0)){ if(actN()) return; noteOff(d1); }
     else if(cmd===0xD0){ setAT(d1/127); }
     else if(cmd===0xA0){ setAT((d2||0)/127); }
     else if(cmd===0xC0){ pcPreset(d1); }
