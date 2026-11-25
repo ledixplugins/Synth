@@ -38,29 +38,35 @@ function raizAtiva(base, chavePublica, shellApi) {
 }
 function confirmarInicio(base) { const cur = lerJ(path.join(base, 'atual.json')); if (cur && cur.tentativas) { delete cur.tentativas; gravarJ(path.join(base, 'atual.json'), cur); } }
 
-// Procura e baixa uma versão nova. `buscar(url)` devolve o texto do pacote.
-// Resultado: {estado:'nenhuma'} | {estado:'pronta', build, version, notes} | {estado:'programa', shell:{version,url}} | {estado:'erro'}
-async function procurar({ url, buscar, base, chavePublica, shellApi, buildAtual }) {
+const partes = v => String(v || '0').split('.').map(n => parseInt(n, 10) || 0);
+function compararVersao(a, b) { const x = partes(a), y = partes(b); for (let i = 0; i < Math.max(x.length, y.length); i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d < 0 ? -1 : 1; } return 0; }
+
+// Procura uma versão nova (só olha; NÃO baixa nem aplica nada: quem decide é o usuário).
+// `buscar(url)` devolve o texto do pacote. `versaoAtual`: versão da interface em uso (para mostrar só o que é novo).
+// Resultado: {estado:'nenhuma'} | {estado:'disponivel', build, version, notas:[{version,date,titulo,itens[]}], texto} | {estado:'programa', ...} | {estado:'erro'}
+async function procurar({ url, buscar, base, chavePublica, shellApi, buildAtual, versaoAtual }) {
   let txt; try { txt = await buscar(url); } catch (e) { return { estado: 'erro', motivo: 'offline' }; }
   const p = verificar(txt, chavePublica); if (!p) return { estado: 'erro', motivo: 'assinatura' };
   const cur = lerJ(path.join(base, 'atual.json')) || {};
-  const maior = Math.max(buildAtual || 0, cur.build || 0);
-  if (p.build <= maior || (cur.ruins || []).includes(p.build)) return { estado: 'nenhuma' };
-  if ((p.needsShell || 0) > shellApi) return { estado: 'programa', shell: p.shell || {}, build: p.build };
+  if (p.build <= Math.max(buildAtual || 0, cur.build || 0) || (cur.ruins || []).includes(p.build)) return { estado: 'nenhuma' };
+  const todas = Array.isArray(p.notes) ? p.notes : [];
+  let notas = todas.filter(n => n && compararVersao(n.version, versaoAtual) > 0);
+  if (!notas.length) notas = todas.slice(0, 1);                       // nunca mostra uma atualização sem dizer o que mudou
+  const r = { build: p.build, version: p.version || '', notas, texto: txt, shell: p.shell || {} };
+  if ((p.needsShell || 0) > shellApi) return Object.assign(r, { estado: 'programa' });
+  return Object.assign(r, { estado: 'disponivel' });
+}
+
+// Instala a versão escolhida pelo usuário (confere tudo de novo) e a torna a versão em uso. Devolve true/false.
+function instalar({ texto, base, chavePublica, shellApi }) {
+  const p = verificar(texto, chavePublica); if (!p || (p.needsShell || 0) > shellApi) return false;
+  const cur = lerJ(path.join(base, 'atual.json')) || {};
   const dir = path.join(base, String(p.build));
   fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
   for (const [nome, f] of Object.entries(p.files)) { const d = path.join(dir, nome); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.writeFileSync(d, Buffer.from(f.b64, 'base64')); }
-  fs.writeFileSync(path.join(dir, 'pacote.json'), txt);
-  gravarJ(path.join(base, 'prox.json'), { build: p.build });           // marcador: será ativada na próxima abertura ou em "Aplicar agora"
-  return { estado: 'pronta', build: p.build, version: p.version || '', notes: p.notes || '' };
-}
-// Ativa a versão baixada (chamado ao abrir o app ou em "Aplicar agora").
-function ativarPendente(base) {
-  const n = lerJ(path.join(base, 'prox.json')); if (!n || !n.build) return false;
-  const cur = lerJ(path.join(base, 'atual.json')) || {};
-  gravarJ(path.join(base, 'atual.json'), { build: n.build, ruins: cur.ruins || [] });
-  try { fs.rmSync(path.join(base, 'prox.json')); } catch (e) {}
-  if (cur.build && cur.build !== n.build) fs.rmSync(path.join(base, String(cur.build)), { recursive: true, force: true });   // só agora a versão anterior sai
+  fs.writeFileSync(path.join(dir, 'pacote.json'), texto);
+  gravarJ(path.join(base, 'atual.json'), { build: p.build, ruins: cur.ruins || [] });
+  if (cur.build && cur.build !== p.build) fs.rmSync(path.join(base, String(cur.build)), { recursive: true, force: true });   // só agora a versão anterior sai
   return true;
 }
-module.exports = { verificar, raizAtiva, confirmarInicio, procurar, ativarPendente };
+module.exports = { verificar, raizAtiva, confirmarInicio, procurar, instalar, compararVersao };

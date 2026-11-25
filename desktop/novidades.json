@@ -1,0 +1,13 @@
+[
+  {
+    "version": "1.2.0",
+    "date": "2026-11-25",
+    "titulo": "Atualizações automáticas e novidades",
+    "itens": [
+      "O AURA agora avisa quando há versão nova e você escolhe se atualiza, vendo antes o que mudou. Não precisa mais reinstalar.",
+      "CHURCH SYNTH BASS passou a ser o preset nº 1.",
+      "Botões mapeados (anterior, próximo...) agora valem pela nota e pelo canal MIDI: o pad não se confunde mais com a tecla de mesmo número. Refaça o mapeamento dos pads uma vez.",
+      "Logo da Ledix Plugins na faixa de madeira, na tela de licença e em Sobre."
+    ]
+  }
+]

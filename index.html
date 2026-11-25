@@ -2664,21 +2664,53 @@
 </script>
 
 <script>
-/* Atualização do app instalado (sem reinstalar): aviso na tela e botões. Só existe no app desktop. */
+/* Atualização do app instalado: o app procura UMA vez ao abrir. Se houver versão nova, aparece o ícone "NOVA VERSÃO";
+   ao clicar, o usuário vê o que mudou e decide se atualiza. Nada é aplicado sem o clique. Só existe no app desktop. */
 (function(){
   const D=window.auraDesktop; if(!D||!D.update) return;
-  const st=document.createElement('style'); st.textContent='#updBar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:100001;max-width:min(560px,94vw);background:#16140f;color:#f1e9dc;border:1px solid #F5A524;border-radius:12px;padding:10px 14px;font:600 13px/1.35 Archivo,system-ui,sans-serif;box-shadow:0 8px 30px #000a;display:none;gap:10px;align-items:center;flex-wrap:wrap}#updBar.on{display:flex}#updBar b{color:#F5A524}#updBar button{font:700 12px Archivo,system-ui,sans-serif;border:0;border-radius:8px;padding:7px 12px;cursor:pointer;background:#F5A524;color:#1a1208}#updBar button.sec{background:#2a2620;color:#cfc6b6}'; document.head.appendChild(st);
-  const bar=document.createElement('div'); bar.id='updBar'; bar.setAttribute('role','status'); document.body.appendChild(bar);
-  let tm=0;
-  function say(html,btns,ms){ bar.innerHTML='<span>'+html+'</span>'; (btns||[]).forEach(b=>{ const e=document.createElement('button'); e.textContent=b[0]; if(b[2]) e.className='sec'; e.onclick=()=>{ b[1](); }; bar.appendChild(e); }); bar.classList.add('on'); clearTimeout(tm); if(ms) tm=setTimeout(()=>bar.classList.remove('on'),ms); }
-  const hide=()=>bar.classList.remove('on');
-  D.update.onStatus(r=>{
-    if(r.estado==='pronta') say('<b>Atualização pronta'+(r.version?' ('+r.version+')':'')+'.</b> Seus presets, setlists e mapeamentos continuam como estão.',[['Aplicar agora',()=>D.update.apply()],['Depois',hide,1]]);
-    else if(r.estado==='programa') say('<b>Nova versão do programa disponível.</b> Esta atualização precisa de uma instalação nova (uma única vez).',[['Baixar',()=>D.openExternal((r.shell&&r.shell.url)||'https://github.com/ledixplugins/Synth/releases/latest')],['Depois',hide,1]]);
-    else if(r.estado==='nenhuma') say('Você já está com a versão mais recente.',[],4000);
-    else if(r.estado==='erro') say('Não foi possível procurar atualização agora. Confira a internet e tente de novo.',[],5000);
-  });
-  D.update.ready().then(i=>{ window.AuraBuild=i; }).catch(()=>{});
+  const st=document.createElement('style'); st.textContent=
+   '#updBtn{position:fixed;right:12px;bottom:40px;z-index:100001;display:none;align-items:center;gap:7px;font:800 10px/1 "Avenir Next",Arial,sans-serif;letter-spacing:.16em;color:#1a1208;background:#F5A524;border:0;border-radius:20px;padding:7px 12px 7px 9px;cursor:pointer;box-shadow:0 2px 14px #f5a52466}#updBtn.on{display:inline-flex}#updBtn svg{width:14px;height:14px}#updBtn i{width:7px;height:7px;border-radius:50%;background:#fff;animation:updp 1.6s ease-in-out infinite}@keyframes updp{50%{opacity:.25}}'+
+   '#updOv{position:fixed;inset:0;z-index:100002;background:rgba(6,6,7,.8);display:none;align-items:center;justify-content:center;padding:16px;font-family:"Avenir Next",Futura,"Helvetica Neue",Arial,sans-serif}#updOv.on{display:flex}'+
+   '#updOv .bx{width:min(520px,100%);max-height:88vh;overflow:auto;background:#16140f;color:#f1e9dc;border:1px solid #7a4c2a;border-radius:16px;padding:22px 24px;box-shadow:0 20px 60px #000c}'+
+   '#updOv h2{margin:0 0 2px;font-size:20px;color:#F5A524;letter-spacing:.02em}#updOv .sub{margin:0 0 14px;font-size:12px;color:#a89c88}#updOv h3{margin:14px 0 4px;font-size:13px;color:#ffcf8a}#updOv h3 small{font-weight:500;color:#a89c88;margin-left:6px}'+
+   '#updOv ul{margin:4px 0 0;padding-left:18px;font-size:13px;line-height:1.45}#updOv li{margin:3px 0}#updOv .ok{margin:16px 0 0;font-size:12px;color:#a89c88}#updOv .er{margin:10px 0 0;font-size:12px;color:#ff9a8a;min-height:0}'+
+   '#updOv .bt{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}#updOv button{font:800 12px "Avenir Next",Arial,sans-serif;letter-spacing:.08em;border:0;border-radius:10px;padding:11px 16px;cursor:pointer;background:#F5A524;color:#1a1208}#updOv button.sec{background:#2a2620;color:#cfc6b6}#updOv button[disabled]{opacity:.55;cursor:default}';
+  document.head.appendChild(st);
+  const btn=document.createElement('button'); btn.id='updBtn'; btn.type='button'; btn.setAttribute('aria-label','Nova versão disponível. Clique para ver o que mudou.');
+  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>NOVA VERSÃO<i></i>';
+  const ov=document.createElement('div'); ov.id='updOv'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-labelledby','updT');
+  document.body.appendChild(btn); document.body.appendChild(ov);
+  let atual={}, status=null;
+  const el=(t,txt,cls)=>{ const e=document.createElement(t); if(txt!=null) e.textContent=txt; if(cls) e.className=cls; return e; };
+  function fechar(){ ov.classList.remove('on'); btn.focus(); }
+  function abrir(){
+    const r=status; if(!r) return; const prog=r.estado==='programa';
+    ov.innerHTML=''; const bx=el('div',null,'bx'); ov.appendChild(bx);
+    const t=el('h2','Nova versão'+(r.version?' '+r.version:'')); t.id='updT'; bx.appendChild(t);
+    bx.appendChild(el('p','Você está na versão '+(atual.version||'atual')+'. Veja o que muda e decida se quer atualizar.','sub'));
+    (r.notas||[]).forEach(n=>{
+      const h=el('h3','Versão '+n.version+(n.titulo?' · '+n.titulo:'')); if(n.date) h.appendChild(el('small',n.date.split('-').reverse().join('/'))); bx.appendChild(h);
+      const ul=el('ul'); (n.itens||[]).forEach(x=>ul.appendChild(el('li',x))); bx.appendChild(ul);
+    });
+    bx.appendChild(el('p',prog?'Esta atualização precisa de uma instalação nova do programa (uma única vez). Seus dados e sua licença são mantidos.':'Seus presets, setlists, mapeamentos, personalizações e sua licença continuam exatamente como estão. O AURA reinicia para aplicar.','ok'));
+    const er=el('p','','er'); er.setAttribute('role','alert'); bx.appendChild(er);
+    const bt=el('div',null,'bt'); bx.appendChild(bt);
+    const go=el('button',prog?'BAIXAR O INSTALADOR':'ATUALIZAR AGORA'); const no=el('button','AGORA NÃO','sec'); no.className='sec'; bt.appendChild(go); bt.appendChild(no);
+    no.onclick=fechar;
+    go.onclick=async()=>{
+      if(prog){ D.openExternal((r.shell&&r.shell.url)||'https://github.com/ledixplugins/Synth/releases/latest'); return; }
+      go.disabled=true; no.disabled=true; go.textContent='ATUALIZANDO…'; er.textContent='';
+      try{ const ok=await D.update.apply(); if(!ok){ er.textContent='Não foi possível atualizar agora. Tente de novo mais tarde.'; go.disabled=false; no.disabled=false; go.textContent='ATUALIZAR AGORA'; } }
+      catch(e){ er.textContent='Não foi possível atualizar agora. Tente de novo mais tarde.'; go.disabled=false; no.disabled=false; go.textContent='ATUALIZAR AGORA'; }
+    };
+    ov.classList.add('on'); go.focus();
+  }
+  btn.onclick=abrir;
+  ov.addEventListener('click',e=>{ if(e.target===ov) fechar(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape' && ov.classList.contains('on')) fechar(); });
+  const mostra=r=>{ if(r && (r.estado==='disponivel'||r.estado==='programa')){ status=r; btn.classList.add('on'); } };
+  D.update.onStatus(mostra);
+  D.update.ready().then(i=>{ atual=i||{}; window.AuraBuild=atual; mostra(atual.status); }).catch(()=>{});
 })();
 </script>
 </body>

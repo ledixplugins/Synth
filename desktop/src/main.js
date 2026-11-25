@@ -11,7 +11,7 @@ const UPDATE_PUB = `-----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEAZEphXyUo7foZFPQw1ejyRdz6ru8nKb2DBVw/G4Dz9Q0=
 -----END PUBLIC KEY-----`;
 const updBase = () => path.join(app.getPath('userData'), 'web-update');
-let ativa = null, buildEmbutido = 0, avisos = [];
+let ativa = null, buildEmbutido = 0, versaoEmbutida = '0', ultimo = null;   // ultimo: resultado da procura feita ao abrir (disponivel/programa)
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'aura', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
 if (!app.requestSingleInstanceLock()) app.quit();
@@ -45,9 +45,12 @@ ipcMain.on('aura:sync', e => { e.returnValue = { deviceId: DEVICE_ID, deviceName
 ipcMain.handle('aura:store:get', () => { const m = mergeLic(readJ(f1()), readJ(f2())); return m ? JSON.stringify(m) : null; });
 ipcMain.handle('aura:store:set', (e, k, v) => { let j; try { j = JSON.parse(v); } catch (x) { return false; } writeJ(f1(), j); writeJ(f2(), j); return true; });
 ipcMain.handle('aura:open', (e, u) => { if (/^https:\/\/(ledixplugins\.com\.br|github\.com\/ledixplugins\/Synth\/|[a-z0-9.-]+\.lemonsqueezy\.com)\//.test(u) || /^https:\/\/github\.com\/ledixplugins\/Synth\//.test(u)) shell.openExternal(u); });
-ipcMain.handle('aura:update:ready', () => { upd.confirmarInicio(updBase()); return { build: ativa ? ativa.build : buildEmbutido, version: ativa ? ativa.version : '', avisos }; });
-ipcMain.handle('aura:update:check', () => verificarAtualizacao(true));
-ipcMain.handle('aura:update:apply', () => { if (upd.ativarPendente(updBase())) { app.relaunch(); app.exit(0); } return true; });
+ipcMain.handle('aura:update:ready', () => { upd.confirmarInicio(updBase()); return { build: ativa ? ativa.build : buildEmbutido, version: ativa ? ativa.version : versaoEmbutida, status: ultimo ? Object.assign({}, ultimo, { texto: undefined }) : null }; });
+ipcMain.handle('aura:update:apply', () => {            // só acontece quando o usuário clica em "Atualizar"
+  if (!ultimo || ultimo.estado !== 'disponivel') return false;
+  if (!upd.instalar({ texto: ultimo.texto, base: updBase(), chavePublica: UPDATE_PUB, shellApi: SHELL_API })) return false;
+  app.relaunch(); app.exit(0); return true;
+});
 ipcMain.handle('aura:http', async (e, url, body) => {          // pedidos ao servidor de licenças feitos pelo processo principal (sem CORS)
   if (!/^https:\/\//.test(url)) return { error: 'URL inválida', _http: 0 };
   try {
@@ -56,10 +59,13 @@ ipcMain.handle('aura:http', async (e, url, body) => {          // pedidos ao ser
   } catch (x) { throw new Error('offline'); }
 });
 
-async function verificarAtualizacao(manual) {
-  const r = await upd.procurar({ url: UPDATE_URL, base: updBase(), chavePublica: UPDATE_PUB, shellApi: SHELL_API, buildAtual: ativa ? ativa.build : buildEmbutido,
+// Procura atualização UMA vez, ao abrir o app (sem baixar nem aplicar nada). Se houver, o app mostra um ícone de "nova versão".
+async function verificarAtualizacao() {
+  const r = await upd.procurar({ url: UPDATE_URL, base: updBase(), chavePublica: UPDATE_PUB, shellApi: SHELL_API, buildAtual: ativa ? ativa.build : buildEmbutido, versaoAtual: ativa ? ativa.version : versaoEmbutida,
     buscar: async u => { const x = await net.fetch(u, { headers: { 'Cache-Control': 'no-cache' } }); if (!x.ok) throw new Error('http ' + x.status); return x.text(); } });
-  for (const w of BrowserWindow.getAllWindows()) if (r.estado === 'pronta' || r.estado === 'programa' || manual) w.webContents.send('aura:update:status', r);
+  if (r.estado !== 'disponivel' && r.estado !== 'programa') return r;
+  ultimo = r;
+  for (const w of BrowserWindow.getAllWindows()) w.webContents.send('aura:update:status', Object.assign({}, r, { texto: undefined }));
   return r;
 }
 function createWindow() {
@@ -72,8 +78,7 @@ function createWindow() {
 }
 app.whenReady().then(() => {
   const root = path.join(__dirname, '..', 'app');
-  try { buildEmbutido = JSON.parse(fs.readFileSync(path.join(root, 'build.json'), 'utf8')).build || 0; } catch (e) {}
-  try { upd.ativarPendente(updBase()); } catch (e) {}                                   // versão baixada na última sessão passa a valer agora
+  try { const b = JSON.parse(fs.readFileSync(path.join(root, 'build.json'), 'utf8')); buildEmbutido = b.build || 0; versaoEmbutida = b.version || '0'; } catch (e) {}
   try { ativa = upd.raizAtiva(updBase(), UPDATE_PUB, SHELL_API); if (ativa && ativa.build <= buildEmbutido) ativa = null; } catch (e) { ativa = null; }
   protocol.handle('aura', req => {
     const p = decodeURIComponent(new URL(req.url).pathname);
@@ -86,10 +91,9 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     ...(process.platform === 'darwin' ? [{ label: 'AURA Synth Bass', submenu: [{ label: 'Sobre o AURA Synth Bass', click: about }, { type: 'separator' }, { role: 'hide', label: 'Ocultar' }, { role: 'hideOthers', label: 'Ocultar outros' }, { type: 'separator' }, { role: 'quit', label: 'Sair' }] }] : []),
     { label: 'Exibir', submenu: [{ role: 'togglefullscreen', label: 'Tela cheia' }, { role: 'reload', label: 'Recarregar' }, { role: 'zoomIn', label: 'Aumentar' }, { role: 'zoomOut', label: 'Diminuir' }, { role: 'resetZoom', label: 'Tamanho normal' }] },
-    { label: 'Ajuda', submenu: [{ label: 'Procurar atualizações', click: () => verificarAtualizacao(true).catch(() => {}) }, { label: 'Site do AURA', click: () => shell.openExternal('https://ledixplugins.com.br/aurasynthbass/') }, ...(process.platform !== 'darwin' ? [{ label: 'Sobre', click: about }] : [])] }]));
+    { label: 'Ajuda', submenu: [{ label: 'Site do AURA', click: () => shell.openExternal('https://ledixplugins.com.br/aurasynthbass/') }, ...(process.platform !== 'darwin' ? [{ label: 'Sobre', click: about }] : [])] }]));
   createWindow();
-  setTimeout(() => verificarAtualizacao(false).catch(() => {}), 6000);                    // procura atualização pouco depois de abrir
-  setInterval(() => verificarAtualizacao(false).catch(() => {}), 6 * 3600 * 1000);       // e a cada 6 horas com o app aberto
+  setTimeout(() => verificarAtualizacao().catch(() => {}), 4000);                          // procura atualização uma vez, pouco depois de abrir
   app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });
 });
 app.on('second-instance', () => { const w = BrowserWindow.getAllWindows()[0]; if (w) { if (w.isMinimized()) w.restore(); w.focus(); } });
