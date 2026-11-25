@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.2.1",
+    "date": "2026-11-25",
+    "titulo": "Sempre cabe na tela",
+    "itens": [
+      "O AURA agora se ajusta sozinho ao tamanho da sua janela ou tela: não há mais barra de rolagem, o painel inteiro aparece de uma vez",
+      "Ao redimensionar a janela, o painel acompanha na hora"
+    ]
+  },
+  {
     "version": "1.2.0",
     "date": "2026-11-25",
     "titulo": "Atualizações automáticas e novidades",
