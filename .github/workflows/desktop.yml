@@ -8,7 +8,8 @@ on:
 permissions:
   contents: write
 env:
-  VERSAO: "1.1.0"
+  VERSAO: "1.2.0"
+  AURA_BUILD: ${{ github.run_number }}
 jobs:
   plugin-win:
     runs-on: windows-latest
@@ -130,3 +131,20 @@ jobs:
           gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1 \
             && gh release upload "$TAG" rel/* --clobber --repo "${{ github.repository }}" \
             || gh release create "$TAG" rel/* --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "AURA Synth Bass $TAG" --notes "Instaladores do AURA Synth Bass para Windows e macOS. © 2026 Thiago R. Galvão."
+  atualizacao:
+    # publica a interface nova, assinada, para os apps já instalados se atualizarem sozinhos (sem reinstalar)
+    if: github.ref == 'refs/heads/comercial' || startsWith(github.ref, 'refs/tags/v')
+    needs: publicar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Gerar o pacote de atualização assinado
+        env:
+          AURA_UPDATE_KEY: ${{ secrets.AURA_UPDATE_KEY }}
+          AURA_VERSAO: ${{ env.VERSAO }}
+        run: node tools/gerar_atualizacao.js aura-update.json
+      - name: Publicar na Release
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh release upload "v${VERSAO}" aura-update.json --clobber --repo "${{ github.repository }}"

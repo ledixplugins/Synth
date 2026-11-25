@@ -2,6 +2,16 @@
 const { app, BrowserWindow, Menu, protocol, net, session, shell, ipcMain, dialog } = require('electron');
 const path = require('path'), fs = require('fs'), os = require('os'), crypto = require('crypto'), { execFileSync } = require('child_process');
 const { pathToFileURL } = require('url');
+const upd = require('./updater');
+
+// ---- atualização sem reinstalar (a interface nova é baixada, conferida pela assinatura e aplicada)
+const SHELL_API = 2;                                   // versão da "casca" do app; pacotes que exigem uma casca maior pedem reinstalação
+const UPDATE_URL = 'https://github.com/ledixplugins/Synth/releases/latest/download/aura-update.json';
+const UPDATE_PUB = `-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAZEphXyUo7foZFPQw1ejyRdz6ru8nKb2DBVw/G4Dz9Q0=
+-----END PUBLIC KEY-----`;
+const updBase = () => path.join(app.getPath('userData'), 'web-update');
+let ativa = null, buildEmbutido = 0, avisos = [];
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'aura', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
 if (!app.requestSingleInstanceLock()) app.quit();
@@ -34,7 +44,10 @@ function mergeLic(a, b) {
 ipcMain.on('aura:sync', e => { e.returnValue = { deviceId: DEVICE_ID, deviceName: os.hostname().slice(0, 24), version: app.getVersion(), platform: process.platform }; });
 ipcMain.handle('aura:store:get', () => { const m = mergeLic(readJ(f1()), readJ(f2())); return m ? JSON.stringify(m) : null; });
 ipcMain.handle('aura:store:set', (e, k, v) => { let j; try { j = JSON.parse(v); } catch (x) { return false; } writeJ(f1(), j); writeJ(f2(), j); return true; });
-ipcMain.handle('aura:open', (e, u) => { if (/^https:\/\/(ledixplugins\.com\.br|[a-z0-9.-]+\.lemonsqueezy\.com)\//.test(u)) shell.openExternal(u); });
+ipcMain.handle('aura:open', (e, u) => { if (/^https:\/\/(ledixplugins\.com\.br|github\.com\/ledixplugins\/Synth\/|[a-z0-9.-]+\.lemonsqueezy\.com)\//.test(u) || /^https:\/\/github\.com\/ledixplugins\/Synth\//.test(u)) shell.openExternal(u); });
+ipcMain.handle('aura:update:ready', () => { upd.confirmarInicio(updBase()); return { build: ativa ? ativa.build : buildEmbutido, version: ativa ? ativa.version : '', avisos }; });
+ipcMain.handle('aura:update:check', () => verificarAtualizacao(true));
+ipcMain.handle('aura:update:apply', () => { if (upd.ativarPendente(updBase())) { app.relaunch(); app.exit(0); } return true; });
 ipcMain.handle('aura:http', async (e, url, body) => {          // pedidos ao servidor de licenças feitos pelo processo principal (sem CORS)
   if (!/^https:\/\//.test(url)) return { error: 'URL inválida', _http: 0 };
   try {
@@ -43,6 +56,12 @@ ipcMain.handle('aura:http', async (e, url, body) => {          // pedidos ao ser
   } catch (x) { throw new Error('offline'); }
 });
 
+async function verificarAtualizacao(manual) {
+  const r = await upd.procurar({ url: UPDATE_URL, base: updBase(), chavePublica: UPDATE_PUB, shellApi: SHELL_API, buildAtual: ativa ? ativa.build : buildEmbutido,
+    buscar: async u => { const x = await net.fetch(u, { headers: { 'Cache-Control': 'no-cache' } }); if (!x.ok) throw new Error('http ' + x.status); return x.text(); } });
+  for (const w of BrowserWindow.getAllWindows()) if (r.estado === 'pronta' || r.estado === 'programa' || manual) w.webContents.send('aura:update:status', r);
+  return r;
+}
 function createWindow() {
   const win = new BrowserWindow({ width: 1280, height: 860, minWidth: 900, minHeight: 640, backgroundColor: '#0b0a09', title: 'AURA Synth Bass',
     icon: path.join(__dirname, '..', 'app', 'icon-512.png'),
@@ -53,15 +72,24 @@ function createWindow() {
 }
 app.whenReady().then(() => {
   const root = path.join(__dirname, '..', 'app');
-  protocol.handle('aura', req => { const p = decodeURIComponent(new URL(req.url).pathname); const f = path.normalize(path.join(root, p)); if (!f.startsWith(root)) return new Response('', { status: 403 }); return net.fetch(pathToFileURL(f).toString()); });
+  try { buildEmbutido = JSON.parse(fs.readFileSync(path.join(root, 'build.json'), 'utf8')).build || 0; } catch (e) {}
+  try { upd.ativarPendente(updBase()); } catch (e) {}                                   // versão baixada na última sessão passa a valer agora
+  try { ativa = upd.raizAtiva(updBase(), UPDATE_PUB, SHELL_API); if (ativa && ativa.build <= buildEmbutido) ativa = null; } catch (e) { ativa = null; }
+  protocol.handle('aura', req => {
+    const p = decodeURIComponent(new URL(req.url).pathname);
+    for (const r of (ativa ? [ativa.dir, root] : [root])) { const f = path.normalize(path.join(r, p)); if (!f.startsWith(r)) return new Response('', { status: 403 }); if (fs.existsSync(f) && fs.statSync(f).isFile()) return net.fetch(pathToFileURL(f).toString()); }
+    return new Response('', { status: 404 });
+  });
   session.defaultSession.setPermissionRequestHandler((wc, perm, cb) => cb(['midi', 'midiSysex', 'media', 'audioCapture', 'fullscreen'].includes(perm)));
   session.defaultSession.setPermissionCheckHandler((wc, perm) => ['midi', 'midiSysex', 'media', 'audioCapture', 'fullscreen'].includes(perm));
   const about = () => dialog.showMessageBox({ type: 'info', title: 'Sobre o AURA Synth Bass', message: 'AURA Synth Bass ' + app.getVersion(), detail: 'Criado por Thiago R. Galvão\n© 2026 · Todos os direitos reservados\nID: AURA-SB-TRG-2026\n\nhttps://ledixplugins.com.br/aurasynthbass/' });
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     ...(process.platform === 'darwin' ? [{ label: 'AURA Synth Bass', submenu: [{ label: 'Sobre o AURA Synth Bass', click: about }, { type: 'separator' }, { role: 'hide', label: 'Ocultar' }, { role: 'hideOthers', label: 'Ocultar outros' }, { type: 'separator' }, { role: 'quit', label: 'Sair' }] }] : []),
     { label: 'Exibir', submenu: [{ role: 'togglefullscreen', label: 'Tela cheia' }, { role: 'reload', label: 'Recarregar' }, { role: 'zoomIn', label: 'Aumentar' }, { role: 'zoomOut', label: 'Diminuir' }, { role: 'resetZoom', label: 'Tamanho normal' }] },
-    { label: 'Ajuda', submenu: [{ label: 'Site do AURA', click: () => shell.openExternal('https://ledixplugins.com.br/aurasynthbass/') }, ...(process.platform !== 'darwin' ? [{ label: 'Sobre', click: about }] : [])] }]));
+    { label: 'Ajuda', submenu: [{ label: 'Procurar atualizações', click: () => verificarAtualizacao(true).catch(() => {}) }, { label: 'Site do AURA', click: () => shell.openExternal('https://ledixplugins.com.br/aurasynthbass/') }, ...(process.platform !== 'darwin' ? [{ label: 'Sobre', click: about }] : [])] }]));
   createWindow();
+  setTimeout(() => verificarAtualizacao(false).catch(() => {}), 6000);                    // procura atualização pouco depois de abrir
+  setInterval(() => verificarAtualizacao(false).catch(() => {}), 6 * 3600 * 1000);       // e a cada 6 horas com o app aberto
   app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });
 });
 app.on('second-instance', () => { const w = BrowserWindow.getAllWindows()[0]; if (w) { if (w.isMinimized()) w.restore(); w.focus(); } });

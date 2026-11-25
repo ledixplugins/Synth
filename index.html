@@ -2662,5 +2662,24 @@
   };
 })();
 </script>
+
+<script>
+/* Atualização do app instalado (sem reinstalar): aviso na tela e botões. Só existe no app desktop. */
+(function(){
+  const D=window.auraDesktop; if(!D||!D.update) return;
+  const st=document.createElement('style'); st.textContent='#updBar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:100001;max-width:min(560px,94vw);background:#16140f;color:#f1e9dc;border:1px solid #F5A524;border-radius:12px;padding:10px 14px;font:600 13px/1.35 Archivo,system-ui,sans-serif;box-shadow:0 8px 30px #000a;display:none;gap:10px;align-items:center;flex-wrap:wrap}#updBar.on{display:flex}#updBar b{color:#F5A524}#updBar button{font:700 12px Archivo,system-ui,sans-serif;border:0;border-radius:8px;padding:7px 12px;cursor:pointer;background:#F5A524;color:#1a1208}#updBar button.sec{background:#2a2620;color:#cfc6b6}'; document.head.appendChild(st);
+  const bar=document.createElement('div'); bar.id='updBar'; bar.setAttribute('role','status'); document.body.appendChild(bar);
+  let tm=0;
+  function say(html,btns,ms){ bar.innerHTML='<span>'+html+'</span>'; (btns||[]).forEach(b=>{ const e=document.createElement('button'); e.textContent=b[0]; if(b[2]) e.className='sec'; e.onclick=()=>{ b[1](); }; bar.appendChild(e); }); bar.classList.add('on'); clearTimeout(tm); if(ms) tm=setTimeout(()=>bar.classList.remove('on'),ms); }
+  const hide=()=>bar.classList.remove('on');
+  D.update.onStatus(r=>{
+    if(r.estado==='pronta') say('<b>Atualização pronta'+(r.version?' ('+r.version+')':'')+'.</b> Seus presets, setlists e mapeamentos continuam como estão.',[['Aplicar agora',()=>D.update.apply()],['Depois',hide,1]]);
+    else if(r.estado==='programa') say('<b>Nova versão do programa disponível.</b> Esta atualização precisa de uma instalação nova (uma única vez).',[['Baixar',()=>D.openExternal((r.shell&&r.shell.url)||'https://github.com/ledixplugins/Synth/releases/latest')],['Depois',hide,1]]);
+    else if(r.estado==='nenhuma') say('Você já está com a versão mais recente.',[],4000);
+    else if(r.estado==='erro') say('Não foi possível procurar atualização agora. Confira a internet e tente de novo.',[],5000);
+  });
+  D.update.ready().then(i=>{ window.AuraBuild=i; }).catch(()=>{});
+})();
+</script>
 </body>
 </html>
