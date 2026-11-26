@@ -1,0 +1,111 @@
+-- Building for: Visual Studio 18 2026
+-- The C compiler identification is MSVC 19.52.37029.0
+-- The CXX compiler identification is MSVC 19.52.37029.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.52.37025/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.52.37025/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring juceaide
+-- Building juceaide
+-- Exporting juceaide
+-- Testing juceaide
+-- Finished setting up juceaide
+CMake Warning at D:/a/Synth/Synth/build/_deps/juce-src/extras/Build/CMake/JUCEUtils.cmake:1714 (message):
+  Target AuraSynthBass has JUCE_BUNDLE_ID 'com.Thiago R.
+  Galvao.AuraSynthBass', which contains spaces.  Use the BUNDLE_ID option to
+  specify a valid ID.
+Call Stack (most recent call first):
+  D:/a/Synth/Synth/build/_deps/juce-src/extras/Build/CMake/JUCEUtils.cmake:2098 (_juce_set_fallback_properties)
+  D:/a/Synth/Synth/build/_deps/juce-src/extras/Build/CMake/JUCEUtils.cmake:2181 (_juce_initialise_target)
+  CMakeLists.txt:18 (juce_add_plugin)
+
+
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - not found
+-- Found Threads: TRUE
+-- Configuring done (61.7s)
+-- Generating done (0.1s)
+CMake Warning (unused-cli):
+  Manually-specified variables were not used by the project:
+
+    CMAKE_BUILD_TYPE
+
+
+-- Build files have been written to: D:/a/Synth/Synth/build
+MSBuild version 18.12.2-1.26514.2+04f6ca984 for .NET Framework
+
+  Checking File Globs
+  1>Checking Build System
+  Generating AuraSynthBass_artefacts/JuceLibraryCode/AuraSynthBass_resources.rc
+  Building Custom Rule D:/a/Synth/Synth/vst/CMakeLists.txt
+  AuraSynthBass_rc_lib.vcxproj -> D:\a\Synth\Synth\build\AuraSynthBass_rc_lib.dir\Release\AuraSynthBass_rc_lib.lib
+  Building Custom Rule D:/a/Synth/Synth/vst/CMakeLists.txt
+  Building Custom Rule D:/a/Synth/Synth/vst/CMakeLists.txt
+  juce_VST3ManifestHelper.cpp
+  PluginProcessor.cpp
+  PluginEditor.cpp
+  juce_audio_processors.cpp
+  juce_audio_processors_ara.cpp
+  juce_audio_processors_lv2_libs.cpp
+  juce_gui_extra.cpp
+D:\a\Synth\Synth\vst\Source\AuraEngine.h(219,43): warning C4189: 'ef_k': local variable is initialized but not referenced [D:\a\Synth\Synth\build\AuraSynthBass.vcxproj]
+  (compiling source file '../vst/Source/PluginProcessor.cpp')
+  
+D:\a\Synth\Synth\vst\Source\AuraEngine.h(219,22): warning C4189: 'ec_k': local variable is initialized but not referenced [D:\a\Synth\Synth\build\AuraSynthBass.vcxproj]
+  (compiling source file '../vst/Source/PluginProcessor.cpp')
+  
+D:\a\Synth\Synth\vst\Source\AuraEngine.h(219,43): warning C4189: 'ef_k': local variable is initialized but not referenced [D:\a\Synth\Synth\build\AuraSynthBass.vcxproj]
+  (compiling source file '../vst/Source/PluginEditor.cpp')
+  
+D:\a\Synth\Synth\vst\Source\AuraEngine.h(219,22): warning C4189: 'ec_k': local variable is initialized but not referenced [D:\a\Synth\Synth\build\AuraSynthBass.vcxproj]
+  (compiling source file '../vst/Source/PluginEditor.cpp')
+  
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.52.37025\include\memory(3670,56): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data [D:\a\Synth\Synth\build\AuraSynthBass.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.52.37025\include\memory(3670,56): warning C4244:         with [D:\a\Synth\Synth\build\AuraSynthBass.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.52.37025\include\memory(3670,56): warning C4244:         [ [D:\a\Synth\Synth\build\AuraSynthBass.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.52.37025\include\memory(3670,56): warning C4244:             _Ty=int [D:\a\Synth\Synth\build\AuraSynthBass.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.52.37025\include\memory(3670,56): warning C4244:         ] [D:\a\Synth\Synth\build\AuraSynthBass.vcxproj]
+  (compiling source file '../vst/Source/PluginProcessor.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.52.37025\include\memory(3670,56):
+      the template instantiation context (the oldest one first) is
+          D:\a\Synth\Synth\vst\Source\PluginProcessor.cpp(52,16):
+          see reference to function template instantiation or specialization 'std::unique_ptr<juce::AudioParameterFloat,std::default_delete<juce::AudioParameterFloat>> std::make_unique<juce::AudioParameterFloat,juce::ParameterID,const char(&)[12],juce::NormalisableRange<float>,int,0>(juce::ParameterID &&,const char (&)[12],juce::NormalisableRange<float> &&,int &&)' being compiled
+  
+  juce_gui_basics.cpp
+  juce_graphics.cpp
+  juce_vst3_helper.vcxproj -> D:\a\Synth\Synth\build\Release\juce_vst3_helper.exe
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  juce_core.cpp
+  juce_core_CompilationTime.cpp
+  juce_data_structures.cpp
+  juce_audio_basics.cpp
+  juce_audio_utils.cpp
+  juce_audio_formats.cpp
+  juce_audio_devices.cpp
+  juce_graphics_Sheenbidi.c
+  AuraSynthBass.vcxproj -> D:\a\Synth\Synth\build\AuraSynthBass_artefacts\Release\AURA Synth Bass_SharedCode.lib
+  Building Custom Rule D:/a/Synth/Synth/vst/CMakeLists.txt
+  juce_audio_plugin_client_AAX.cpp
+  juce_audio_plugin_client_AAX_utils.cpp
+  juce_audio_plugin_client_ARA.cpp
+  juce_audio_plugin_client_LV2.cpp
+  juce_audio_plugin_client_Standalone.cpp
+  juce_audio_plugin_client_Unity.cpp
+  juce_audio_plugin_client_VST2.cpp
+  juce_audio_plugin_client_VST3.cpp
+     Creating library D:/a/Synth/Synth/build/AuraSynthBass_artefacts/Release/VST3/AURA Synth Bass.lib and object D:/a/Synth/Synth/build/AuraSynthBass_artefacts/Release/VST3/AURA Synth Bass.exp
+  AuraSynthBass_VST3.vcxproj -> D:\a\Synth\Synth\build\AuraSynthBass_artefacts\Release\VST3\AURA Synth Bass.vst3\Contents\x86_64-win\AURA Synth Bass.vst3
+  removing moduleinfo.json
+  creating D:/a/Synth/Synth/build/AuraSynthBass_artefacts/Release/VST3/AURA Synth Bass.vst3/Contents/Resources/moduleinfo.json
+  Building Custom Rule D:/a/Synth/Synth/vst/CMakeLists.txt
