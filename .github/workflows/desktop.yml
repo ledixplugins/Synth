@@ -25,12 +25,15 @@ jobs:
         with: { name: plugin-win, path: plugin-out }
   plugin-mac:
     runs-on: macos-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - name: Compilar plugin VST3 e AU
+        timeout-minutes: 45
         run: |
-          cmake -S vst -B build -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --config Release -j 4
+          set -o pipefail
+          # log com horário em cada linha: se travar, o branch buildlog-plugin-mac mostra onde parou
+          ( cmake -S vst -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release -j 3 ) 2>&1 | while IFS= read -r l; do echo "$(date +%T) $l"; done | tee plugin-mac.log
           mkdir -p plugin-out
           cp -R build/AuraSynthBass_artefacts/Release/VST3/*.vst3 plugin-out/
           cp -R build/AuraSynthBass_artefacts/Release/AU/*.component plugin-out/
@@ -38,6 +41,13 @@ jobs:
           codesign --force --deep -s - plugin-out/*.component || true
       - uses: actions/upload-artifact@v4
         with: { name: plugin-mac, path: plugin-out }
+      - name: Enviar log (plugin mac)
+        if: failure() || cancelled()
+        run: |
+          git config user.name ci; git config user.email ci@example.com
+          cp plugin-mac.log /tmp/l.log 2>/dev/null || echo "sem log" > /tmp/l.log
+          git checkout --orphan buildlog-plugin-mac && git rm -rf . -q || true
+          cp /tmp/l.log plugin-mac.log && git add plugin-mac.log && git commit -m "log plugin mac run ${{ github.run_number }}" -q && git push -f origin buildlog-plugin-mac
   instalador-win:
     needs: plugin-win
     runs-on: windows-latest
@@ -62,6 +72,7 @@ jobs:
   instalador-mac:
     needs: plugin-mac
     runs-on: macos-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -85,6 +96,8 @@ jobs:
       - name: Montar o instalador .pkg (app + VST3 + AU)
         run: |
           set -e
+          exec > >(tee pkg-mac.log) 2>&1
+          set -x
           APP=$(ls -d desktop/dist/mac-universal/*.app | head -1)
           mkdir -p pkgroot/app/Applications pkgroot/vst3 pkgroot/au pkgs
           cp -R "$APP" pkgroot/app/Applications/
@@ -128,6 +141,13 @@ jobs:
           ls -la *.pkg
       - uses: actions/upload-artifact@v4
         with: { name: AURA-Synth-macOS-Setup, path: "*.pkg" }
+      - name: Enviar log (pkg mac)
+        if: failure() || cancelled()
+        run: |
+          git config user.name ci; git config user.email ci@example.com
+          cp pkg-mac.log /tmp/l.log 2>/dev/null || echo "sem log" > /tmp/l.log
+          git checkout --orphan buildlog-pkg-mac && git rm -rf . -q || true
+          cp /tmp/l.log pkg-mac.log && git add pkg-mac.log && git commit -m "log pkg mac run ${{ github.run_number }}" -q && git push -f origin buildlog-pkg-mac
   publicar:
     # publica os instaladores como Release (a página de download aponta para /releases/latest)
     if: github.ref == 'refs/heads/comercial' || startsWith(github.ref, 'refs/tags/v')
