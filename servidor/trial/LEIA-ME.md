@@ -22,6 +22,7 @@ código do Worker diretamente, só o editor de código do painel faz isso.
 ## Como funciona
 `POST /trial` com `email` e `device`: registro do AURA Synth Bass (produto fixo `synthbass` no código).
 `POST /trial/preamp-bass` com os mesmos campos: registro do AURA Preamp Bass (produto fixo `preampbass`).
+`POST /trial/aura-pad` com os mesmos campos: registro do AURA Pad (produto fixo `aurapad`).
 
 Se esse e-mail nunca usou o teste *daquele produto*, grava a data de início e responde `new: true`. Se já usou,
 responde a data original com `new: false`, e o prazo não reinicia. Apelidos do Gmail (pontos e `+algo`) contam

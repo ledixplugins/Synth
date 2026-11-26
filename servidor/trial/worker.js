@@ -4,7 +4,8 @@
 // por produto: se já existe, devolve a data original de início, então o prazo de 15 dias não reinicia.
 // A tabela guarda o teste por produto (chave: product + email_hash). O produto é fixo por rota, nunca vem do corpo
 // do pedido (senão bastaria trocar o nome do produto para reiniciar o teste). Um Worker só, compartilhado entre os
-// produtos AURA: cada um tem a sua rota (/trial para o Synth Bass, /trial/preamp-bass para o Preamp Bass).
+// produtos AURA: cada um tem a sua rota (/trial para o Synth Bass, /trial/preamp-bass para o Preamp Bass,
+// /trial/aura-pad para o AURA Pad).
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-allow-headers': 'content-type' };
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...CORS, 'content-type': 'application/json' } });
 
@@ -65,6 +66,7 @@ export default {
 
     if (u.pathname === '/trial') return registrarTeste(req, env, 'synthbass');
     if (u.pathname === '/trial/preamp-bass') return registrarTeste(req, env, 'preampbass');
+    if (u.pathname === '/trial/aura-pad') return registrarTeste(req, env, 'aurapad');
     return json({ ok: false, error: 'Não encontrado.' }, 404);
   }
 };
