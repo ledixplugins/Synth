@@ -1,0 +1,29 @@
+[
+  {
+    "version": "1.0.2",
+    "date": "2026-11-26",
+    "titulo": "Novo ícone",
+    "itens": [
+      "Novo ícone do AURA Pad, em ciano e com pads em camadas, para não se confundir com o do AURA Synth.",
+      "No Mac e no Windows, o ícone do programa muda ao instalar o instalador novo; a atualização automática troca só o ícone dentro do app."
+    ]
+  },
+  {
+    "version": "1.0.1",
+    "date": "2026-11-26",
+    "titulo": "Identificação de autoria",
+    "itens": [
+      "O AURA Pad agora mostra que foi criado por Thiago R. Galvão e passa essa marca para os backups e setlists que você exporta.",
+      "Nenhuma mudança no som nem nos seus ajustes."
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "date": "2026-11-26",
+    "titulo": "Primeira versão",
+    "itens": [
+      "Pads infinitos em 12 tons, drum pads com kits, metrônomo com ritmos, setlist, MIDI e StageLab.",
+      "O AURA Pad agora avisa quando houver versão nova: você vê o que mudou e escolhe se atualiza."
+    ]
+  }
+]

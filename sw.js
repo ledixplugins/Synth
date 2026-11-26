@@ -1,14 +1,14 @@
-// AURA Synth — © 2026 Thiago R. Galvão. Todos os direitos reservados.
-// AURA Synth: guarda a página para abrir sem internet.
-// Com internet, busca a versão nova; se a rede não responder em 2,5 s (Wi-Fi sem sinal), abre a cópia guardada.
-const CACHE='aura-676cd9c65e', FILES=['./','index.html','manifest.json','icon.svg','icon-180.png','icon-192.png','icon-512.png'];
-self.addEventListener('install',e=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting())); });
-self.addEventListener('activate',e=>{ e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });
+// AURA Pad · © 2026 Thiago R. Galvão. Todos os direitos reservados. ID: AURA-PD-TRG-2026
+const V='aurapad-v39';
+const SHELL=['./','index.html','style.css','app.js','stagelab.js','pager.js','knob.js','licenca.js','update.js','catalog.json','manifest.webmanifest','icon.svg'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
-  const req=e.request;
-  if(req.method!=='GET' || new URL(req.url).origin!==self.location.origin) return;
-  const cached=()=>caches.match(req,{ignoreSearch:true}).then(r=>r||caches.match('index.html'));
-  const net=fetch(req).then(r=>{ if(r.ok){ const copy=r.clone(); caches.open(CACHE).then(c=>c.put(req,copy)).catch(()=>{}); } return r; });
-  e.respondWith(Promise.race([net, new Promise((_,rej)=>setTimeout(()=>rej(new Error('lento')),2500))]).catch(()=>cached().then(r=>r||net)));
-  e.waitUntil(net.catch(()=>{}));
+  const r=e.request; if(r.method!=='GET'||new URL(r.url).origin!==location.origin) return;
+  const isAudio=/\/(audio|sf)\//.test(r.url);
+  if(isAudio){ // cache-first
+    e.respondWith(caches.match(r).then(m=>m||fetch(r).then(res=>{ if(res.ok){const cp=res.clone();caches.open(V).then(c=>c.put(r,cp));} return res; })));
+  } else { // rede primeiro, cache como reserva (app atualiza sozinho quando online)
+    e.respondWith(fetch(r).then(res=>{ if(res.ok){const cp=res.clone();caches.open(V).then(c=>c.put(r,cp));} return res; }).catch(()=>caches.match(r)));
+  }
 });
