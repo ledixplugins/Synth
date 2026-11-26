@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('auraDesktop', {
   deviceId: info.deviceId, deviceName: info.deviceName, version: info.version, platform: info.platform,
   store: { get: () => ipcRenderer.invoke('aura:store:get'), set: (k, v) => ipcRenderer.invoke('aura:store:set', k, v) },
   http: (url, body) => ipcRenderer.invoke('aura:http', url, body),
+  cortesia: (chave) => ipcRenderer.invoke('aura:cortesia', chave),
   openExternal: u => ipcRenderer.invoke('aura:open', u),
   config: {},
   update: {

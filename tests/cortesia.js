@@ -1,0 +1,20 @@
+// Chaves de cortesia: só a chave privada certa gera chaves aceitas; qualquer alteração invalida.
+const crypto = require('crypto'), path = require('path');
+const { gerar, verificar } = require(path.join(__dirname, '..', 'desktop', 'src', 'cortesia.js'));
+const par = () => { const k = crypto.generateKeyPairSync('ed25519'); return { priv: k.privateKey.export({ type: 'pkcs8', format: 'pem' }), pub: k.publicKey.export({ type: 'spki', format: 'pem' }) }; };
+const A = par(), B = par(); let ruins = 0;
+const ok = (c, m) => { console.log((c ? 'ok   ' : 'ERRO ') + m); if (!c) ruins++; };
+const g = gerar('Amigo@Exemplo.com', A.priv);
+const r = verificar(g.chave, A.pub);
+ok(r && r.email === 'amigo@exemplo.com' && r.id === g.id && r.produto === 'synth', 'chave gerada é aceita, com e-mail e id');
+ok(verificar(' ' + g.chave.slice(0, 40) + '\n' + g.chave.slice(40) + ' ', A.pub), 'aceita a chave colada com espaços ou quebra de linha');
+ok(!verificar(g.chave, B.pub), 'chave assinada por outra chave privada é recusada');
+const [, d, s] = g.chave.split('.');
+const outro = Buffer.from(Buffer.from(d, 'base64url').toString().replace('amigo', 'outro')).toString('base64url');
+ok(!verificar('AURA1.' + outro + '.' + s, A.pub), 'trocar o e-mail invalida a chave');
+const semPrefixo = crypto.sign(null, Buffer.from(Buffer.from(d, 'base64url')), A.priv).toString('base64url');
+ok(!verificar('AURA1.' + d + '.' + semPrefixo, A.pub), 'assinatura sem o prefixo de cortesia (ex.: de atualização) não vale');
+const pad = 'pad|x@y.com|abc', sigPad = crypto.sign(null, Buffer.from('AURA-CORTESIA|' + pad), A.priv).toString('base64url');
+ok(!verificar('AURA1.' + Buffer.from(pad).toString('base64url') + '.' + sigPad, A.pub), 'chave de outro produto não vale no Synth');
+ok(!verificar('lixo', A.pub) && !verificar('', A.pub) && !verificar(null, A.pub), 'texto qualquer é recusado sem erro');
+process.exit(ruins ? 1 : 0);

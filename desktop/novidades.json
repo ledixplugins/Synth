@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.3.2",
+    "date": "2026-11-26",
+    "titulo": "Chaves de cortesia",
+    "itens": [
+      "O AURA Synth agora aceita chaves de cortesia (presente), que ativam o programa sem prazo.",
+      "Para usar, toque em JÁ TENHO UMA CHAVE, cole a chave recebida e toque em ATIVAR."
+    ]
+  },
+  {
     "version": "1.3.1",
     "date": "2026-11-26",
     "titulo": "Preset nº 1 com nome novo",

@@ -1,6 +1,7 @@
 // AURA Synth — app desktop. © 2026 Thiago R. Galvão. Todos os direitos reservados. ID: AURA-SB-TRG-2026
 const { app, BrowserWindow, Menu, protocol, net, session, shell, ipcMain, dialog } = require('electron');
 const path = require('path'), fs = require('fs'), os = require('os'), crypto = require('crypto'), { execFileSync } = require('child_process');
+const cortesia = require('./cortesia');
 const { pathToFileURL } = require('url');
 const upd = require('./updater');
 
@@ -48,6 +49,8 @@ function mergeLic(a, b) {
 ipcMain.on('aura:sync', e => { e.returnValue = { deviceId: DEVICE_ID, deviceName: os.hostname().slice(0, 24), version: app.getVersion(), platform: process.platform }; });
 ipcMain.handle('aura:store:get', () => { const m = mergeLic(readJ(f1()), readJ(f2())); return m ? JSON.stringify(m) : null; });
 ipcMain.handle('aura:store:set', (e, k, v) => { let j; try { j = JSON.parse(v); } catch (x) { return false; } writeJ(f1(), j); writeJ(f2(), j); return true; });
+// Chave de cortesia (presente): conferida aqui, com a chave pública embutida
+ipcMain.handle('aura:cortesia', (e, chave) => cortesia.verificar(chave, UPDATE_PUB));
 ipcMain.handle('aura:open', (e, u) => { if (/^https:\/\/(ledixplugins\.com\.br|github\.com\/ledixplugins\/Synth\/|[a-z0-9.-]+\.lemonsqueezy\.com)\//.test(u) || /^https:\/\/github\.com\/ledixplugins\/Synth\//.test(u)) shell.openExternal(u); });
 ipcMain.handle('aura:update:ready', () => { upd.confirmarInicio(updBase()); return { build: ativa ? ativa.build : buildEmbutido, version: ativa ? ativa.version : versaoEmbutida, status: ultimo ? Object.assign({}, ultimo, { texto: undefined }) : null }; });
 ipcMain.handle('aura:update:apply', () => {            // só acontece quando o usuário clica em "Atualizar"

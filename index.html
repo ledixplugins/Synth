@@ -2542,7 +2542,7 @@
   const D=window.auraDesktop; if(!D) return;           // app web: sem licenciamento
   const CFG=Object.assign({ api:'https://api.lemonsqueezy.com/v1/licenses', trialDays:15, graceDays:30, buyUrl:'https://ledixplugins.com.br/aurasynthbass/', trialApi:'https://aura-trial.ledixplugins.workers.dev' }, D.config||{});
   const DAY=86400000, $=id=>document.getElementById(id);
-  let st={ t0:0, seen:0, key:'', inst:'', val:0, name:'', email:'', reused:false, owner:'', ownval:0 }, status='trial', info='', keyMode=false, ownerOpen=false, ownerMode=false;
+  let st={ t0:0, seen:0, key:'', inst:'', val:0, name:'', email:'', reused:false, owner:'', ownval:0, gift:'', giftMail:'', giftId:'' }, status='trial', info='', keyMode=false, ownerOpen=false, ownerMode=false;
   const css=document.createElement('style'); css.textContent=`
   #licOv{position:fixed;inset:0;z-index:100000;background:rgba(6,6,7,.92);display:none;align-items:center;justify-content:center;font-family:"Avenir Next",Futura,"Helvetica Neue",Arial,sans-serif;color:#e2e5ea}
   #licOv.on{display:flex}
@@ -2565,13 +2565,18 @@
 
   async function load(){ try{ const s=await D.store.get('lic'); if(s) st=Object.assign(st,JSON.parse(s)); }catch(e){ dbg(e); }
     try{ const b=JSON.parse(localStorage.getItem('aura_lic_b')||'null'); if(b&&b.t0&&(!st.t0||b.t0<st.t0)) st.t0=b.t0; if(b&&b.seen>st.seen) st.seen=b.seen; }catch(e){ dbg(e); } }
+  // Chaves de cortesia (presente): conferidas pelo app (assinatura), sem servidor. Para cancelar uma, ponha o id aqui.
+  const REVOGADAS=[];
+  async function confereCortesia(chave){ try{ if(!D.cortesia) return null; const r=await D.cortesia(chave); return r && REVOGADAS.indexOf(r.id)<0 ? r : null; }catch(e){ dbg(e); return null; } }
   async function save(){ const j=JSON.stringify(st); try{ await D.store.set('lic',j); }catch(e){ dbg(e); } try{ localStorage.setItem('aura_lic_b',JSON.stringify({t0:st.t0,seen:st.seen})); }catch(e){ dbg(e); } }
   async function call(path,body){ if(D.http) return D.http(CFG.api+path,body); const r=await fetch(CFG.api+path,{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(body)}); let j={}; try{ j=await r.json(); }catch(e){ dbg(e); } j._http=r.status; return j; }
   const devName=()=> (D.deviceName||'Aparelho')+' · '+(D.deviceId||'').slice(0,8);
 
   function evalStatus(){
     const now=Date.now();
+    if(st.gift){ status='licensed'; return; }
     if(st.seen && now < st.seen - DAY){ status='clock'; return; }       // relógio atrasado: trata como expirado
+    if(st.gift){ status='licensed'; return; }                                            // chave de cortesia (conferida ao abrir)
     if(st.owner){ status = (now-(st.ownval||0)) <= CFG.graceDays*DAY ? 'licensed' : 'recheck'; return; }     // acesso total do dono (revalidado no servidor)
     if(st.key && st.inst){ status = (now-st.val) <= CFG.graceDays*DAY ? 'licensed' : 'recheck'; return; }
     if(CFG.trialApi && (!st.t0 || !st.email)){ status='email'; return; }        // teste só começa depois de informar o e-mail
@@ -2593,6 +2598,7 @@
       h='<p><b>Acesso do desenvolvedor.</b> Informe o e-mail e o código secreto.</p>'; }
     else if(status==='email' && !keyMode){ $('licKey').hidden=true; mail.hidden=false; have.hidden=false; have.textContent='JÁ TENHO UMA CHAVE'; $('licGo').textContent='INICIAR TESTE GRÁTIS'; $('licOwnerLnk').hidden=false; $('licOwner').hidden=!ownerOpen;
       h='<p><b>Teste grátis de '+CFG.trialDays+' dias</b> com todos os recursos. Informe seu e-mail para começar.</p><p>Cada e-mail só pode usar o teste uma vez. É preciso estar conectado à internet neste primeiro passo.</p>'; }
+    else if(status==='licensed' && st.gift){ h='<p><b>Licença de cortesia</b> ativa neste aparelho.</p><p>Presente para <b>'+String(st.giftMail).replace(/[<>&"]/g,'')+'</b>. Aproveite!</p>'; $('licKey').hidden=true; $('licGo').textContent='REMOVER DESTE APARELHO'; }
     else if(status==='licensed' && st.owner){ h='<p><b>Acesso total</b> do desenvolvedor neste aparelho.</p>'; $('licKey').hidden=true; $('licGo').textContent='SAIR DO ACESSO TOTAL'; }
     else if(status==='licensed'){ h='<p><b>Licença ativa</b> neste aparelho ('+(st.name||devName())+').</p><p>Chave: <b>'+st.key.slice(0,8)+'••••••••</b></p>'; $('licKey').hidden=true; $('licGo').textContent='DESATIVAR ESTE APARELHO'; }
     else{ $('licKey').hidden=false; $('licGo').textContent='ATIVAR';
@@ -2623,9 +2629,15 @@
     try{
       if(ownerMode && status!=='licensed'){ await startTrial(); return; }
       if(status==='email' && !keyMode){ await startTrial(); return; }
+      if(status==='licensed' && st.gift){ st.gift=st.giftMail=st.giftId=''; await save(); evalStatus(); paint(); show(); return; }
       if(status==='licensed' && st.owner){ st.owner=''; st.ownval=0; await save(); evalStatus(); paint(); show(); return; }
       if(status==='licensed'){ const j=await call('/deactivate',{license_key:st.key,instance_id:st.inst}); if(j.deactivated||j._http===404){ st.key=st.inst=''; st.val=0; await save(); evalStatus(); paint(); show(); } else er.textContent=j.error||'Não foi possível desativar agora.'; return; }
       const key=($('licKey').value||'').trim(); if(!key){ er.textContent='Cole a chave de ativação.'; return; }
+      if(/^AURA1\./.test(key.replace(/\s+/g,''))){                                       // chave de cortesia: conferida aqui mesmo, sem internet
+        if(!D.cortesia){ er.textContent='Esta chave precisa da versão mais nova do AURA Synth. Baixe o instalador em ledixplugins.com.br e tente de novo.'; return; }
+        const g=await confereCortesia(key.replace(/\s+/g,''));
+        if(!g){ er.textContent='Chave de cortesia inválida. Confira se copiou a chave inteira.'; return; }
+        st.gift=key.replace(/\s+/g,''); st.giftMail=g.email; st.giftId=g.id; await save(); evalStatus(); paint(); hide(); try{ window.dispatchEvent(new Event('aura-licensed')); }catch(e){ dbg(e); } return; }
       const j=await call('/activate',{license_key:key,instance_name:devName()});
       if(j.activated){ st.key=key; st.inst=j.instance&&j.instance.id; st.name=devName(); st.val=Date.now(); await save(); evalStatus(); paint(); hide(); try{ window.dispatchEvent(new Event('aura-licensed')); }catch(e){ dbg(e); } }
       else if(/limit/i.test(j.error||'')) er.textContent='Esta chave já está ativa em 3 aparelhos. Desative um deles (no AURA do outro aparelho: Ativação → Desativar) ou fale com o suporte.';
@@ -2633,6 +2645,7 @@
     catch(e){ er.textContent='Sem conexão com o servidor de licenças. Verifique a internet e tente de novo.'; }
     finally{ b.disabled=false; } };
   async function revalidate(){
+    if(st.gift) return;
     if(st.owner){ try{ const j=await postTrial({email:st.email,device:D.deviceId||'',owner_token:st.owner});
         if(j&&j.owner){ st.ownval=Date.now(); await save(); } else if(j&&j._http===403){ st.owner=''; st.ownval=0; await save(); } }catch(e){ dbg(e); } evalStatus(); paint(); if(!ok()) show(); return; }
     if(!(st.key&&st.inst)) return; try{ const j=await call('/validate',{license_key:st.key,instance_id:st.inst});
@@ -2640,7 +2653,8 @@
 
   const api={ ok, show:()=>{ if(!ov.classList.contains('on')) show(false); }, status:()=>status, _st:()=>st, _reload:async()=>{ await load(); evalStatus(); paint(); } };
   window.AuraLic=api;
-  (async()=>{ await load(); const now=Date.now(); if(!st.t0 && !CFG.trialApi) st.t0=now; if(now>st.seen) st.seen=now; await save(); evalStatus(); paint(); if(!ok()) show(); else await revalidate(); window.__licReady=true; })();
+  (async()=>{ await load(); if(st.gift && !(await confereCortesia(st.gift))){ st.gift=st.giftMail=st.giftId=''; }
+    const now=Date.now(); if(!st.t0 && !CFG.trialApi) st.t0=now; if(now>st.seen) st.seen=now; await save(); evalStatus(); paint(); if(!ok()) show(); else await revalidate(); window.__licReady=true; })();
   setInterval(()=>{ const now=Date.now(); if(now>st.seen){ st.seen=now; save(); } evalStatus(); paint(); if(!ok()){ show(); try{ if(window.panicAll) window.panicAll(); }catch(e){ dbg(e); } } },60000);
 })();
 </script>

@@ -8,7 +8,7 @@ on:
 permissions:
   contents: write
 env:
-  VERSAO: "1.3.0"
+  VERSAO: "1.3.2"
   AURA_BUILD: ${{ github.run_number }}
 jobs:
   plugin-win:
