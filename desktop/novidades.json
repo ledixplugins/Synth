@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.3.1",
+    "date": "2026-11-26",
+    "titulo": "Preset nº 1 com nome novo",
+    "itens": [
+      "O preset CHURCH SYNTH BASS agora se chama WORSHIP SYNTH BASS. O som é o mesmo e ele continua sendo o nº 1.",
+      "Se ele estava nos seus favoritos ou na sua setlist, continua lá com o nome novo."
+    ]
+  },
+  {
     "version": "1.3.0",
     "date": "2026-11-26",
     "titulo": "Novo nome: AURA Synth",

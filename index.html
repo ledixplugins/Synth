@@ -886,6 +886,9 @@
   try{ console.log('%cAURA SYNTH%c © 2026 '+AURA_AUTOR+' — todos os direitos reservados','font-weight:700;color:#e8a33d','');}catch(e){ dbg(e); }
   const $ = id => document.getElementById(id);
   const LS = { get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }, set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } } };
+  // Presets de fábrica renomeados: favoritos, setlist e backups antigos passam a usar o nome novo
+  const RENOMEADOS={'CHURCH SYNTH BASS':'WORSHIP SYNTH BASS'}, novoNome=n=>RENOMEADOS[n]||n;
+  ['aura_favs_v1','aura_setlist_v1'].forEach(k=>{ const v=LS.get(k,null); if(Array.isArray(v) && v.some(x=>RENOMEADOS[x])) LS.set(k, v.map(novoNome)); });
 
   // ---- ajustes globais (não fazem parte do preset): afinação, faixa da roda, curva de toque, MIDI, entrada externa
   const GKEY='aura_glob_v1';
@@ -952,7 +955,7 @@
   const F = p => Object.assign(norm(p), {factory:true});
   const FACTORY = [
     // Destaque (sempre o primeiro da lista)
-    F({name:'CHURCH SYNTH BASS', oct:-2, wave:'square', lvl:1.0, sub:0, cut:0.0560, fenv:1.04, kt:0.667, glide:0, a:0.002, d:0.25, s:0.60, r:0.25, vol:1.69}),
+    F({name:'WORSHIP SYNTH BASS', oct:-2, wave:'square', lvl:1.0, sub:0, cut:0.0560, fenv:1.04, kt:0.667, glide:0, a:0.002, d:0.25, s:0.60, r:0.25, vol:1.69}),
     // Sub
     F({name:'DEEP SUB BASS', oct:-1, wave:'square',   lvl:0.75, sub:0.35, cut:0.41, fenv:0.8, kt:0, glide:0.03,  a:0.008, d:0.295, s:0.59, r:0.19, vol:1.57}),
     F({name:'SUB BASS', oct:-2, wave:'sawtooth', sw:1, lvl:0.62, sub:0.62, cut:0.35, res:0.40, fenv:0.39, kt:0.20, drv:0.50, ovl:0.40,
@@ -1040,7 +1043,7 @@
     F({name:'ZAP + PING', oct:1, wave:'triangle', lvl:1.0, w2:'triangle', o2:1, d2:0, l2:0.16, w3:'triangle', o3:-3, d3:0, k3:1, l3:0.15, sub:0, cut:0.30, res:0, fenv:3.5, fa:0.2, fd:0.5, fs:1, fr:0.1, kt:0, pa:24, pd:0.09,
        a:0.003, d:0.90, s:0.20, r:0.06, vol:1.79, efx:{d:0, m:0, rv:0}}),
   ];
-  const FAMILIAS = [["CHURCH", ["CHURCH SYNTH BASS"]], ["SUB", ["DEEP SUB BASS", "SUB BASS", "SUB BASS (SOFT)", "SUB BASS (HARD)", "SUB BASS (808)", "SUB", "SUB AGRO", "SUB ARP", "SUB AGRO ARP"]], ["DRIVE", ["DRIVE", "DRIVE (STAGE 2)", "DRIVE (SOFT)", "DRIVE (HEAVY)", "BAD!BASS"]], ["OCTAVE", ["OCTAVE (CLEAN)", "OCTAVE (WILD)", "OCTAVE (SOFT)", "OCTAVE (HARD)"]], ["FUNK, POP E ROCK", ["FUNK (PLUCK)", "FUNK (SLAP)", "POP (ROUND)", "ROCK (GRIT)", "$24$"]], ["LEAD", ["LEAD (MONO)", "LEAD (SOFT)", "DUO-GLIDE"]], ["PLUCK", ["PLUCK (SHORT)", "PLUCK (WARM)", "HRD PLUCK"]], ["CHORUS E ESPECIAIS", ["CHORUS", "CHORUS (WIDE)", "ANGRY DROP", "SINE PING", "ZAP DROP", "ZAP + PING"]]];   // título de cada grupo na lista de presets
+  const FAMILIAS = [["CHURCH", ["WORSHIP SYNTH BASS"]], ["SUB", ["DEEP SUB BASS", "SUB BASS", "SUB BASS (SOFT)", "SUB BASS (HARD)", "SUB BASS (808)", "SUB", "SUB AGRO", "SUB ARP", "SUB AGRO ARP"]], ["DRIVE", ["DRIVE", "DRIVE (STAGE 2)", "DRIVE (SOFT)", "DRIVE (HEAVY)", "BAD!BASS"]], ["OCTAVE", ["OCTAVE (CLEAN)", "OCTAVE (WILD)", "OCTAVE (SOFT)", "OCTAVE (HARD)"]], ["FUNK, POP E ROCK", ["FUNK (PLUCK)", "FUNK (SLAP)", "POP (ROUND)", "ROCK (GRIT)", "$24$"]], ["LEAD", ["LEAD (MONO)", "LEAD (SOFT)", "DUO-GLIDE"]], ["PLUCK", ["PLUCK (SHORT)", "PLUCK (WARM)", "HRD PLUCK"]], ["CHORUS E ESPECIAIS", ["CHORUS", "CHORUS (WIDE)", "ANGRY DROP", "SINE PING", "ZAP DROP", "ZAP + PING"]]];   // título de cada grupo na lista de presets
   const FAMILIA_DE = {}; FAMILIAS.forEach(([f,l])=>l.forEach(n=>FAMILIA_DE[n]=f));
   const UKEY='aura_user_presets_v1', LKEY='aura_last_preset_v1', FKEY='aura_favs_v1', FOKEY='aura_fav_only_v1';
   const asList = v => Array.isArray(v) ? v : [];
@@ -1050,7 +1053,7 @@
   let favs = new Set(asList(LS.get(FKEY,[])).filter(x=>typeof x==='string')), favOnly = !!LS.get(FOKEY,false);
   let curPreset = 0, dirty = false;
   { let l=LS.get(LKEY,null);
-    if(!LS.get('aura_ord_v2',0)){ LS.set('aura_ord_v2',1); if(Number.isInteger(l)){ if(l===29) l=0; else if(l>=0 && l<29) l++; LS.set(LKEY,l); } }     // o CHURCH SYNTH BASS passou a ser o nº 1: o preset salvo acompanha
+    if(!LS.get('aura_ord_v2',0)){ LS.set('aura_ord_v2',1); if(Number.isInteger(l)){ if(l===29) l=0; else if(l>=0 && l<29) l++; LS.set(LKEY,l); } }     // o WORSHIP SYNTH BASS (antes CHURCH SYNTH BASS) passou a ser o nº 1: o preset salvo acompanha
     if(Number.isInteger(l) && l>=0 && l<PRESETS.length) curPreset=l; }
   const P = {}; PKEYS.forEach(k=>P[k]=PRESETS[curPreset][k]);
 
@@ -1595,8 +1598,8 @@
           if(j && j.aura){
             if(j.ver>2) extra+=' · arquivo de versão mais nova: parâmetros desconhecidos foram ignorados';
             got=asList(j.presets).filter(p=>p&&typeof p==='object'&&typeof p.name==='string').slice(0,500);
-            asList(j.favs).forEach(x=>{ if(typeof x==='string') favs.add(x); }); LS.set(FKEY,[...favs]);
-            if(j.ccMap){ ccMap=cleanCC(j.ccMap); LS.set(MAPKEY,ccMap); } if(j.actMap){ actMap=cleanAct(j.actMap); LS.set(ACTKEY,actMap); } drawMap(); if(j.setlist){ setlist=asList(j.setlist).filter(x=>typeof x==='string').slice(0,200); saveSet(); } extra=' + ajustes';
+            asList(j.favs).forEach(x=>{ if(typeof x==='string') favs.add(novoNome(x)); }); LS.set(FKEY,[...favs]);
+            if(j.ccMap){ ccMap=cleanCC(j.ccMap); LS.set(MAPKEY,ccMap); } if(j.actMap){ actMap=cleanAct(j.actMap); LS.set(ACTKEY,actMap); } drawMap(); if(j.setlist){ setlist=asList(j.setlist).filter(x=>typeof x==='string').map(novoNome).slice(0,200); saveSet(); } extra=' + ajustes';
           } else { const p=fromMdp(txt); if(p) got=[p]; }
         }
         if(!got.length){ bad++; continue; }
