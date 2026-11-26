@@ -31,7 +31,7 @@ with sync_playwright() as p:
 
     # preset antigo não mexe nos efeitos que a pessoa deixou ligados
     pg.evaluate("window.__fx.FX.m=1; window.__fx.FX.d=2;")
-    pg.evaluate(f"window.__live.carregar({nomes.index('CHURCH SYNTH BASS')})"); pg.wait_for_timeout(200)
+    pg.evaluate(f"window.__live.carregar({nomes.index('WORSHIP SYNTH BASS')})"); pg.wait_for_timeout(200)
     fx_antigo = pg.evaluate("({m:window.__fx.FX.m, d:window.__fx.FX.d})")
     print('preset antigo não mexe nos efeitos:', fx_antigo == {'m': 1, 'd': 2}, fx_antigo)
 
