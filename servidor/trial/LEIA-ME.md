@@ -1,7 +1,7 @@
 # Servidor do teste grátis (Cloudflare)
 
 Guarda quais e-mails já usaram o teste de 15 dias. Só o resumo SHA-256 do e-mail é gravado, nunca o e-mail em texto.
-**Compartilhado entre os produtos AURA** (Synth Bass e Preamp Bass): a tabela guarda o teste por produto — chave
+**Compartilhado entre os produtos AURA** (Synth e Preamp Bass): a tabela guarda o teste por produto — chave
 (product, email_hash) — e cada produto tem a sua própria rota no Worker, com o produto fixo no código da rota
 (nunca vem do corpo do pedido, senão bastaria trocar o nome do produto para reiniciar o teste).
 
@@ -14,13 +14,13 @@ chave primária `(product, email_hash)`.
 2. Settings → Bindings → confirme o binding D1 `DB` → banco `aura-trials` (se ainda não existir, adicione).
 3. (Recomendado) Settings → Variables and secrets → Secret `TRIAL_SALT` com um texto longo e aleatório. Guarde esse texto: se trocar depois, os e-mails antigos deixam de ser reconhecidos.
 4. Abra `https://aura-trial.ledixplugins.workers.dev` no navegador. Deve aparecer `{"ok":true,"servico":"aura-trial"}`.
-5. `trialApi` já aponta para esse endereço tanto no `index.html` do Synth Bass (comercial) quanto no `Source/Licenca.h` do Preamp Bass.
+5. `trialApi` já aponta para esse endereço tanto no `index.html` do Synth (comercial) quanto no `Source/Licenca.h` do Preamp Bass.
 
 **Sempre que mudar o `worker.js`, republique-o manualmente aqui** — esta sessão não tem uma ferramenta que publique o
 código do Worker diretamente, só o editor de código do painel faz isso.
 
 ## Como funciona
-`POST /trial` com `email` e `device`: registro do AURA Synth Bass (produto fixo `synthbass` no código).
+`POST /trial` com `email` e `device`: registro do AURA Synth (produto fixo `synthbass` no código).
 `POST /trial/preamp-bass` com os mesmos campos: registro do AURA Preamp Bass (produto fixo `preampbass`).
 `POST /trial/aura-pad` com os mesmos campos: registro do AURA Pad (produto fixo `aurapad`).
 
@@ -35,7 +35,7 @@ No Worker, em Settings → Variables and secrets, crie:
 - `OWNER_EMAILS` (tipo Secret ou Text): o(s) e-mail(s) do dono, separados por vírgula. Vale para as duas rotas.
 - `OWNER_CODE` (tipo Secret): um código longo e aleatório que só o dono sabe.
 
-No app do Synth Bass, na tela de e-mail, toque em "acesso do desenvolvedor", digite o e-mail e o código e toque em
+No app do Synth, na tela de e-mail, toque em "acesso do desenvolvedor", digite o e-mail e o código e toque em
 INICIAR TESTE GRÁTIS. O selo passa a mostrar ACESSO TOTAL. O app guarda uma prova assinada, ligada ao aparelho, e a
 revalida pela internet (tolerância offline de 30 dias). Só o e-mail, sem o código, não libera nada. (O Preamp Bass
 ainda não tem esse atalho na interface; o Worker já aceita o mesmo `owner_code`/`owner_token` na rota dele.)

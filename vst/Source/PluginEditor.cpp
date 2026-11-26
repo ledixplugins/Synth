@@ -111,7 +111,7 @@ void AuraEditor::timerCallback() {
 
 void AuraEditor::paint(Graphics& g) {
     g.fillAll(kBg);
-    g.setColour(kAmber); g.setFont(FontOptions(18.0f, Font::bold)); g.drawText("AURA SYNTH BASS", 12, 8, 220, 28, Justification::centredLeft);
+    g.setColour(kAmber); g.setFont(FontOptions(18.0f, Font::bold)); g.drawText("AURA SYNTH", 12, 8, 220, 28, Justification::centredLeft);
     g.setColour(kText.withAlpha(0.5f)); g.setFont(FontOptions(10.0f)); g.drawText("(c) 2026 Thiago R. Galvao", 12, 30, 220, 14, Justification::centredLeft);
     for (auto& s : sections) {
         g.setColour(kPanel); g.fillRoundedRectangle(s->area.toFloat(), 6.0f);

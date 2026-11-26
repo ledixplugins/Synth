@@ -1,4 +1,4 @@
-// AURA Synth Bass (plugin) - Copyright (c) 2026 Thiago R. Galvão. Todos os direitos reservados.
+// AURA Synth (plugin) - Copyright (c) 2026 Thiago R. Galvão. Todos os direitos reservados.
 #pragma once
 #include "PluginProcessor.h"
 

@@ -8,7 +8,7 @@ on:
 permissions:
   contents: write
 env:
-  VERSAO: "1.2.0"
+  VERSAO: "1.3.0"
   AURA_BUILD: ${{ github.run_number }}
 jobs:
   plugin-win:
@@ -55,9 +55,10 @@ jobs:
           npm install --no-audit --no-fund
           npm run dist:win
           ls dist
-          cp dist/*.exe ../AURA-Synth-Bass-Windows.exe
+          cp dist/*.exe ../AURA-Synth-Windows.exe
+          cp dist/*.exe ../AURA-Synth-Bass-Windows.exe   # nome antigo: mantém funcionando os links de download já publicados
       - uses: actions/upload-artifact@v4
-        with: { name: AURA-Synth-Bass-Windows-Setup, path: "AURA-Synth-Bass-Windows.exe" }
+        with: { name: AURA-Synth-Windows-Setup, path: "AURA-Synth*-Windows.exe" }
   instalador-mac:
     needs: plugin-mac
     runs-on: macos-latest
@@ -88,20 +89,32 @@ jobs:
           mkdir -p pkgroot/app/Applications pkgroot/vst3 pkgroot/au pkgs
           cp -R "$APP" pkgroot/app/Applications/
           mkdir -p pkgroot/vst3/Library/Audio/Plug-Ins/VST3 pkgroot/au/Library/Audio/Plug-Ins/Components
-          cp -R "desktop/plugins/mac/AURA Synth Bass.vst3" pkgroot/vst3/Library/Audio/Plug-Ins/VST3/
-          cp -R "desktop/plugins/mac/AURA Synth Bass.component" pkgroot/au/Library/Audio/Plug-Ins/Components/
-          pkgbuild --root pkgroot/app  --identifier br.com.ledixplugins.aurasynthbass.app  --version $VERSAO pkgs/app.pkg
-          pkgbuild --root pkgroot/vst3 --identifier br.com.ledixplugins.aurasynthbass.vst3 --version $VERSAO pkgs/vst3.pkg
-          pkgbuild --root pkgroot/au   --identifier br.com.ledixplugins.aurasynthbass.au   --version $VERSAO pkgs/au.pkg
+          cp -R "desktop/plugins/mac/AURA Synth.vst3" pkgroot/vst3/Library/Audio/Plug-Ins/VST3/
+          cp -R "desktop/plugins/mac/AURA Synth.component" pkgroot/au/Library/Audio/Plug-Ins/Components/
+          # O produto se chamava AURA Synth Bass: antes de instalar, remove o app e os plugins com o nome antigo
+          # (senão ficariam dois apps e o plugin apareceria duas vezes na DAW). Os dados do usuário não ficam nessas pastas.
+          mkdir -p scripts/app scripts/vst3 scripts/au
+          printf '#!/bin/sh\nrm -rf "/Applications/AURA Synth Bass.app"\nexit 0\n' > scripts/app/preinstall
+          printf '#!/bin/sh\nrm -rf "/Library/Audio/Plug-Ins/VST3/AURA Synth Bass.vst3"\nexit 0\n' > scripts/vst3/preinstall
+          printf '#!/bin/sh\nrm -rf "/Library/Audio/Plug-Ins/Components/AURA Synth Bass.component"\nexit 0\n' > scripts/au/preinstall
+          chmod +x scripts/*/preinstall
+          # Não deixa o instalador "realocar" o app para dentro do antigo (mesmo identificador): instala sempre no lugar certo
+          for c in app vst3 au; do
+            pkgbuild --analyze --root pkgroot/$c pkgs/$c.plist
+            python3 -c "import plistlib,sys;p=sys.argv[1];d=plistlib.load(open(p,'rb'));[x.__setitem__('BundleIsRelocatable',False) for x in d];plistlib.dump(d,open(p,'wb'))" pkgs/$c.plist
+          done
+          pkgbuild --root pkgroot/app  --component-plist pkgs/app.plist  --scripts scripts/app  --identifier br.com.ledixplugins.aurasynthbass.app  --version $VERSAO pkgs/app.pkg
+          pkgbuild --root pkgroot/vst3 --component-plist pkgs/vst3.plist --scripts scripts/vst3 --identifier br.com.ledixplugins.aurasynthbass.vst3 --version $VERSAO pkgs/vst3.pkg
+          pkgbuild --root pkgroot/au   --component-plist pkgs/au.plist   --scripts scripts/au   --identifier br.com.ledixplugins.aurasynthbass.au   --version $VERSAO pkgs/au.pkg
           cp desktop/build/EULA.txt pkgs/license.txt
           cat > pkgs/dist.xml <<'X'
           <?xml version="1.0" encoding="utf-8"?>
           <installer-gui-script minSpecVersion="1">
-            <title>AURA Synth Bass</title>
+            <title>AURA Synth</title>
             <license file="license.txt"/>
             <options customize="allow" require-scripts="false" hostArchitectures="x86_64,arm64"/>
             <choices-outline><line choice="app"/><line choice="vst3"/><line choice="au"/></choices-outline>
-            <choice id="app"  title="Aplicativo AURA Synth Bass" description="Instala o programa na pasta Aplicativos."><pkg-ref id="br.com.ledixplugins.aurasynthbass.app"/></choice>
+            <choice id="app"  title="Aplicativo AURA Synth" description="Instala o programa na pasta Aplicativos."><pkg-ref id="br.com.ledixplugins.aurasynthbass.app"/></choice>
             <choice id="vst3" title="Plugin VST3" description="Para Reaper e outras DAWs."><pkg-ref id="br.com.ledixplugins.aurasynthbass.vst3"/></choice>
             <choice id="au"   title="Plugin Audio Unit (AU)" description="Para Logic, GarageBand e outras DAWs AU."><pkg-ref id="br.com.ledixplugins.aurasynthbass.au"/></choice>
             <pkg-ref id="br.com.ledixplugins.aurasynthbass.app">app.pkg</pkg-ref>
@@ -110,10 +123,11 @@ jobs:
           </installer-gui-script>
           X
           sed -i '' 's/^          //' pkgs/dist.xml
-          productbuild --distribution pkgs/dist.xml --package-path pkgs --resources pkgs "AURA-Synth-Bass-macOS.pkg"
+          productbuild --distribution pkgs/dist.xml --package-path pkgs --resources pkgs "AURA-Synth-macOS.pkg"
+          cp AURA-Synth-macOS.pkg AURA-Synth-Bass-macOS.pkg   # nome antigo: mantém funcionando os links de download já publicados
           ls -la *.pkg
       - uses: actions/upload-artifact@v4
-        with: { name: AURA-Synth-Bass-macOS-Setup, path: "*.pkg" }
+        with: { name: AURA-Synth-macOS-Setup, path: "*.pkg" }
   publicar:
     # publica os instaladores como Release (a página de download aponta para /releases/latest)
     if: github.ref == 'refs/heads/comercial' || startsWith(github.ref, 'refs/tags/v')
@@ -121,16 +135,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
-        with: { name: AURA-Synth-Bass-Windows-Setup, path: rel }
+        with: { name: AURA-Synth-Windows-Setup, path: rel }
       - uses: actions/download-artifact@v4
-        with: { name: AURA-Synth-Bass-macOS-Setup, path: rel }
+        with: { name: AURA-Synth-macOS-Setup, path: rel }
       - name: Criar ou atualizar release
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           TAG="v${VERSAO}"
           gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1 \
             && gh release upload "$TAG" rel/* --clobber --repo "${{ github.repository }}" \
-            || gh release create "$TAG" rel/* --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "AURA Synth Bass $TAG" --notes "Instaladores do AURA Synth Bass para Windows e macOS. © 2026 Thiago R. Galvão."
+            || gh release create "$TAG" rel/* --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "AURA Synth $TAG" --notes "Instaladores do AURA Synth (antes AURA Synth Bass) para Windows e macOS. © 2026 Thiago R. Galvão."
   atualizacao:
     # publica a interface nova, assinada, para os apps já instalados se atualizarem sozinhos (sem reinstalar)
     if: github.ref == 'refs/heads/comercial' || startsWith(github.ref, 'refs/tags/v')

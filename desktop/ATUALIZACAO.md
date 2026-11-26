@@ -1,4 +1,4 @@
-# Atualização do AURA Synth Bass sem reinstalar
+# Atualização do AURA Synth sem reinstalar
 
 **Regra de ouro: o usuário decide.** Nada é baixado, aplicado ou reiniciado sem o clique dele, e ele sempre vê o que mudou antes.
 

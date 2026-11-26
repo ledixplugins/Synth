@@ -1,4 +1,4 @@
-// AURA Synth Bass - motor de som em C++ puro (porte do AudioWorklet da versão web)
+// AURA Synth - motor de som em C++ puro (porte do AudioWorklet da versão web)
 // Copyright (c) 2026 Thiago R. Galvão. Todos os direitos reservados. ID: AURA-SB-TRG-2026
 #pragma once
 #include <cmath>

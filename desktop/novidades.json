@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.3.0",
+    "date": "2026-11-26",
+    "titulo": "Novo nome: AURA Synth",
+    "itens": [
+      "O AURA Synth Bass agora se chama AURA Synth. É o mesmo instrumento, com os mesmos timbres e recursos.",
+      "Seus presets, setlists, mapeamentos de knobs e botões e a sua licença continuam exatamente como estavam."
+    ]
+  },
+  {
     "version": "1.2.1",
     "date": "2026-11-25",
     "titulo": "Sempre cabe na tela",

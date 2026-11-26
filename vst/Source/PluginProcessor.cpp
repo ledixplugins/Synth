@@ -1,4 +1,4 @@
-// AURA Synth Bass (plugin) - Copyright (c) 2026 Thiago R. Galvão. Todos os direitos reservados. ID: AURA-SB-TRG-2026
+// AURA Synth (plugin) - Copyright (c) 2026 Thiago R. Galvão. Todos os direitos reservados. ID: AURA-SB-TRG-2026
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 using namespace juce;

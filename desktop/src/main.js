@@ -1,4 +1,4 @@
-// AURA Synth Bass — app desktop. © 2026 Thiago R. Galvão. Todos os direitos reservados. ID: AURA-SB-TRG-2026
+// AURA Synth — app desktop. © 2026 Thiago R. Galvão. Todos os direitos reservados. ID: AURA-SB-TRG-2026
 const { app, BrowserWindow, Menu, protocol, net, session, shell, ipcMain, dialog } = require('electron');
 const path = require('path'), fs = require('fs'), os = require('os'), crypto = require('crypto'), { execFileSync } = require('child_process');
 const { pathToFileURL } = require('url');
@@ -12,6 +12,10 @@ MCowBQYDK2VwAyEAZEphXyUo7foZFPQw1ejyRdz6ru8nKb2DBVw/G4Dz9Q0=
 -----END PUBLIC KEY-----`;
 const updBase = () => path.join(app.getPath('userData'), 'web-update');
 let ativa = null, buildEmbutido = 0, versaoEmbutida = '0', ultimo = null;   // ultimo: resultado da procura feita ao abrir (disponivel/programa)
+
+// O nome mudou para AURA Synth, mas os dados (presets, setlists, mapeamentos, licença, atualizações) continuam
+// na pasta do nome antigo: assim nada se perde para quem já usava o app. Precisa vir antes de qualquer uso de userData.
+try { app.setPath('userData', path.join(app.getPath('appData'), 'AURA Synth Bass')); } catch (e) {}
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'aura', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
 if (!app.requestSingleInstanceLock()) app.quit();
@@ -69,7 +73,7 @@ async function verificarAtualizacao() {
   return r;
 }
 function createWindow() {
-  const win = new BrowserWindow({ width: 1280, height: 860, minWidth: 900, minHeight: 640, backgroundColor: '#0b0a09', title: 'AURA Synth Bass',
+  const win = new BrowserWindow({ width: 1280, height: 860, minWidth: 900, minHeight: 640, backgroundColor: '#0b0a09', title: 'AURA Synth',
     icon: path.join(__dirname, '..', 'app', 'icon-512.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required' } });
   win.loadURL('aura://app/index.html');
@@ -87,9 +91,9 @@ app.whenReady().then(() => {
   });
   session.defaultSession.setPermissionRequestHandler((wc, perm, cb) => cb(['midi', 'midiSysex', 'media', 'audioCapture', 'fullscreen'].includes(perm)));
   session.defaultSession.setPermissionCheckHandler((wc, perm) => ['midi', 'midiSysex', 'media', 'audioCapture', 'fullscreen'].includes(perm));
-  const about = () => dialog.showMessageBox({ type: 'info', title: 'Sobre o AURA Synth Bass', message: 'AURA Synth Bass ' + app.getVersion(), detail: 'Criado por Thiago R. Galvão\n© 2026 · Todos os direitos reservados\nID: AURA-SB-TRG-2026\n\nhttps://ledixplugins.com.br/aurasynthbass/' });
+  const about = () => dialog.showMessageBox({ type: 'info', title: 'Sobre o AURA Synth', message: 'AURA Synth ' + app.getVersion(), detail: 'Criado por Thiago R. Galvão\n© 2026 · Todos os direitos reservados\nID: AURA-SB-TRG-2026\n\nhttps://ledixplugins.com.br/aurasynthbass/' });
   Menu.setApplicationMenu(Menu.buildFromTemplate([
-    ...(process.platform === 'darwin' ? [{ label: 'AURA Synth Bass', submenu: [{ label: 'Sobre o AURA Synth Bass', click: about }, { type: 'separator' }, { role: 'hide', label: 'Ocultar' }, { role: 'hideOthers', label: 'Ocultar outros' }, { type: 'separator' }, { role: 'quit', label: 'Sair' }] }] : []),
+    ...(process.platform === 'darwin' ? [{ label: 'AURA Synth', submenu: [{ label: 'Sobre o AURA Synth', click: about }, { type: 'separator' }, { role: 'hide', label: 'Ocultar' }, { role: 'hideOthers', label: 'Ocultar outros' }, { type: 'separator' }, { role: 'quit', label: 'Sair' }] }] : []),
     { label: 'Exibir', submenu: [{ role: 'togglefullscreen', label: 'Tela cheia' }, { role: 'reload', label: 'Recarregar' }, { role: 'zoomIn', label: 'Aumentar' }, { role: 'zoomOut', label: 'Diminuir' }, { role: 'resetZoom', label: 'Tamanho normal' }] },
     { label: 'Ajuda', submenu: [{ label: 'Site do AURA', click: () => shell.openExternal('https://ledixplugins.com.br/aurasynthbass/') }, ...(process.platform !== 'darwin' ? [{ label: 'Sobre', click: about }] : [])] }]));
   createWindow();

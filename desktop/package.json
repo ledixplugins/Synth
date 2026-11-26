@@ -1,8 +1,8 @@
 {
   "name": "aura-synth-bass",
-  "productName": "AURA Synth Bass",
-  "version": "1.2.0",
-  "description": "AURA Synth Bass — sintetizador de baixo",
+  "productName": "AURA Synth",
+  "version": "1.3.0",
+  "description": "AURA Synth — sintetizador de baixo",
   "author": "Thiago R. Galvão",
   "license": "UNLICENSED",
   "private": true,
@@ -19,7 +19,7 @@
   },
   "build": {
     "appId": "br.com.ledixplugins.aurasynthbass",
-    "productName": "AURA Synth Bass",
+    "productName": "AURA Synth",
     "copyright": "© 2026 Thiago R. Galvão. Todos os direitos reservados.",
     "directories": {
       "output": "dist",
@@ -31,7 +31,7 @@
       "package.json"
     ],
     "asar": true,
-    "artifactName": "AURA-Synth-Bass-Setup-${version}.${ext}",
+    "artifactName": "AURA-Synth-Setup-${version}.${ext}",
     "win": {
       "target": [
         {
@@ -43,7 +43,7 @@
       ],
       "icon": "build/icon.ico",
       "publisherName": "Thiago R. Galvão",
-      "legalTrademarks": "AURA Synth Bass",
+      "legalTrademarks": "AURA Synth",
       "extraResources": [
         {
           "from": "plugins/win",
@@ -62,7 +62,7 @@
       "uninstallerIcon": "build/icon.ico",
       "license": "build/EULA.txt",
       "include": "build/installer.nsh",
-      "shortcutName": "AURA Synth Bass",
+      "shortcutName": "AURA Synth",
       "language": "1046"
     },
     "mac": {

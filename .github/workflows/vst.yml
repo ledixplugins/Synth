@@ -22,10 +22,10 @@ jobs:
           cp -R build/AuraSynthBass_artefacts/Release/AU/*.component out/ || true
           codesign --force --deep -s - out/*.vst3 || true
           codesign --force --deep -s - out/*.component || true
-          lipo -archs "out/AURA Synth Bass.vst3/Contents/MacOS/AURA Synth Bass" || true
-          cd out && zip -r -y ../AURA-Synth-Bass-macOS.zip . && cd ..
+          lipo -archs "out/AURA Synth.vst3/Contents/MacOS/AURA Synth" || true
+          cd out && zip -r -y ../AURA-Synth-macOS.zip . && cd ..
       - uses: actions/upload-artifact@v4
-        with: { name: AURA-Synth-Bass-macOS, path: AURA-Synth-Bass-macOS.zip }
+        with: { name: AURA-Synth-macOS, path: AURA-Synth-macOS.zip }
       - name: Push log
         if: always()
         run: |
@@ -48,9 +48,9 @@ jobs:
         shell: bash
         run: |
           mkdir out && cp -R build/AuraSynthBass_artefacts/Release/VST3/*.vst3 out/
-          cd out && 7z a ../AURA-Synth-Bass-Windows.zip . && cd ..
+          cd out && 7z a ../AURA-Synth-Windows.zip . && cd ..
       - uses: actions/upload-artifact@v4
-        with: { name: AURA-Synth-Bass-Windows, path: AURA-Synth-Bass-Windows.zip }
+        with: { name: AURA-Synth-Windows, path: AURA-Synth-Windows.zip }
       - name: Push log
         if: always()
         shell: bash

@@ -1,4 +1,4 @@
-// AURA Synth Bass (plugin) - Copyright (c) 2026 Thiago R. Galvão. Todos os direitos reservados. ID: AURA-SB-TRG-2026
+// AURA Synth (plugin) - Copyright (c) 2026 Thiago R. Galvão. Todos os direitos reservados. ID: AURA-SB-TRG-2026
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "AuraEngine.h"
@@ -19,7 +19,7 @@ public:
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
-    const juce::String getName() const override { return "AURA Synth Bass"; }
+    const juce::String getName() const override { return "AURA Synth"; }
     bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
