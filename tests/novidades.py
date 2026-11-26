@@ -51,7 +51,7 @@ with sync_playwright() as p:
     # 5) lista de presets por família e busca
     pg=nova(); pg.click('.brand'); pg.wait_for_timeout(300); pg.click('#oled'); pg.wait_for_timeout(400)
     grupos=pg.evaluate("[...document.querySelectorAll('#pList .pgrp')].map(e=>e.textContent)"); linhas=pg.evaluate("document.querySelectorAll('#pList .prow').length")
-    conferir(grupos==['CHURCH','SUB','DRIVE','OCTAVE','FUNK, POP E ROCK','LEAD','PLUCK','CHORUS E ESPECIAIS'] and linhas==36, f'lista com 8 grupos (CHURCH primeiro) e 36 presets ({len(grupos)} grupos, {linhas} linhas)')
+    conferir(grupos==['WORSHIP','SUB','DRIVE','OCTAVE','FUNK, POP E ROCK','LEAD','PLUCK','CHORUS E ESPECIAIS'] and linhas==36, f'lista com 8 grupos (WORSHIP primeiro) e 36 presets ({len(grupos)} grupos, {linhas} linhas)')
     pg.fill('#pSearch','drive'); pg.wait_for_timeout(200)
     conferir(pg.evaluate("document.querySelectorAll('#pList .pgrp').length")==0 and pg.evaluate("document.querySelectorAll('#pList .prow').length")==4, 'busca "drive" acha 4 presets e esconde os títulos')
     pg.fill('#pSearch',''); pg.click('#pCats button:text-is("PLUCK")'); pg.wait_for_timeout(200)
