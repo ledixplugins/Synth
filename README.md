@@ -1,4 +1,4 @@
-# AURA Synth Bass
+# AURA Synth
 
 Sintetizador de baixo monofônico que roda no navegador (Web Audio + Web MIDI), feito para ser tocado por um controlador MIDI.
 
